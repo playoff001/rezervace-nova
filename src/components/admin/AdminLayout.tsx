@@ -29,6 +29,12 @@ export default function AdminLayout() {
               >
                 🏨 Administrace
               </Link>
+              <Link
+                to="/"
+                className="inline-flex items-center px-2 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900 ml-4"
+              >
+                ← Hlavní stránka
+              </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link
                   to="/admin/dashboard"
