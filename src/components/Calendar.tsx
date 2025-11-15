@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { format, parseISO, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfDay, isBefore, isAfter } from 'date-fns';
+import { useState } from 'react';
+import { format, parseISO, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isBefore, isAfter } from 'date-fns';
 import { cs } from 'date-fns/locale/cs';
-import type { Reservation, Block, HalfDay, DayStatus } from '../types';
+import type { Reservation, Block, DayStatus } from '../types';
 import { getHalfDaysForReservation, isPastDate, formatDateISO } from '../utils/dateUtils';
 
 interface CalendarProps {
@@ -11,7 +11,7 @@ interface CalendarProps {
   selectedCheckIn: string | null;
   selectedCheckOut: string | null;
   onCheckInSelect: (date: string) => void;
-  onCheckOutSelect: (date: string) => void;
+  onCheckOutSelect: (date: string | '') => void;
 }
 
 export default function Calendar({
@@ -97,7 +97,7 @@ export default function Calendar({
     // Pokud máme vybraný příjezd i odjezd, resetujeme a začneme nový výběr
     if (selectedCheckIn && selectedCheckOut) {
       onCheckInSelect(dateStr);
-      onCheckOutSelect(null);
+      onCheckOutSelect('');
       return;
     }
 
@@ -115,7 +115,7 @@ export default function Calendar({
       // Pokud klikneme na datum před příjezdem, nastavíme nový příjezd
       if (isBefore(clickedDate, checkInDate) || isSameDay(clickedDate, checkInDate)) {
         onCheckInSelect(dateStr);
-        onCheckOutSelect(null);
+        onCheckOutSelect('');
       } else {
         // Jinak nastavíme odjezd
         onCheckOutSelect(dateStr);
@@ -123,7 +123,7 @@ export default function Calendar({
     }
   }
 
-  function getDayClassName(date: Date, status: DayStatus): string {
+  function getDayClassName(date: Date, _status: DayStatus): string {
     let classes = 'relative p-1.5 border border-gray-200 min-h-[70px] cursor-pointer transition-colors ';
     
     if (!isSameMonth(date, currentMonth)) {

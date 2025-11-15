@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, parseISO, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, startOfDay, isBefore, addDays, isAfter, isSameDay } from 'date-fns';
+import { format, parseISO, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isBefore, isAfter, isSameDay } from 'date-fns';
 import { cs } from 'date-fns/locale/cs';
 import { blocksAPI, calendarAPI } from '../../api/api';
 import type { Room, Block, Reservation, HalfDay } from '../../types';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { roomsAPI, blocksAPI, calendarAPI } from '../../api/api';
+import { roomsAPI, calendarAPI } from '../../api/api';
 import type { Room, Block, SeasonalPricing } from '../../types';
 import AdminRoomCalendar from '../../components/admin/AdminRoomCalendar';
 
