@@ -1,0 +1,26 @@
+# Netlify konfigurace pro frontend
+# Tento soubor říká Netlify, jak buildovat a servovat aplikaci
+
+[build]
+  # Build příkaz - vytvoří produkční verzi
+  command = "npm run build"
+  
+  # Složka s buildnutými soubory
+  publish = "dist"
+
+# Redirect pravidla - všechny cesty (kromě API) přesměruj na index.html
+# To je potřeba pro React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers pro bezpečnost a CORS
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
