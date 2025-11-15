@@ -12,8 +12,12 @@ import Layout from './components/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 
 function App() {
+  // Zjistíme base path z environment variable nebo z window.location
+  const basePath = import.meta.env.VITE_BASE_PATH || 
+    (window.location.pathname.split('/').filter(Boolean)[0] ? `/${window.location.pathname.split('/').filter(Boolean)[0]}` : '');
+  
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basePath}>
       <Routes>
         {/* Uživatelská část */}
         <Route path="/" element={<Layout />}>
