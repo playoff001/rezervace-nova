@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { roomsAPI, calendarAPI } from '../../api/api';
-import type { Room, Block, SeasonalPricing } from '../../types';
+import { roomsAPI } from '../../api/api';
+import type { Room, SeasonalPricing } from '../../types';
 import AdminRoomCalendar from '../../components/admin/AdminRoomCalendar';
 
 export default function AdminRooms() {
@@ -210,16 +210,20 @@ export default function AdminRooms() {
   }
 
   function updateHolidayPrice(holiday: 'christmas' | 'newyear' | 'easter', nights: number, value: number) {
+    const currentHoliday = { ...(roomForm.seasonalPricing.holidays?.[holiday] || {}) };
+    if (value > 0) {
+      currentHoliday[nights] = value;
+    } else {
+      delete currentHoliday[nights];
+    }
+    
     setRoomForm({
       ...roomForm,
       seasonalPricing: {
         ...roomForm.seasonalPricing,
         holidays: {
           ...roomForm.seasonalPricing.holidays,
-          [holiday]: {
-            ...(roomForm.seasonalPricing.holidays?.[holiday] || {}),
-            [nights]: value || undefined,
-          },
+          [holiday]: currentHoliday,
         },
       },
     });

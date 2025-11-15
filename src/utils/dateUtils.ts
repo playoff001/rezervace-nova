@@ -1,6 +1,6 @@
 import { format, parseISO, addDays, isBefore, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { cs } from 'date-fns/locale/cs';
-import type { HalfDay, DayStatus } from '../types';
+import type { HalfDay } from '../types';
 
 /**
  * Formátuje datum do ISO formátu (YYYY-MM-DD)
