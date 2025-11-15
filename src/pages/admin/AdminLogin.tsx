@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { adminAPI } from '../../api/api';
 
 export default function AdminLogin() {
@@ -88,9 +88,9 @@ export default function AdminLogin() {
           </div>
         </form>
         <div className="text-center">
-          <a href="/" className="text-sm text-blue-600 hover:text-blue-800">
+          <Link to="/" className="text-sm text-blue-600 hover:text-blue-800">
             ← Zpět na hlavní stránku
-          </a>
+          </Link>
         </div>
       </div>
     </div>
