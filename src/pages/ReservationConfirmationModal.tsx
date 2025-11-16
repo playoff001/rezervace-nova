@@ -5,20 +5,24 @@ import { formatDateDisplay } from '../utils/dateUtils';
 
 interface ReservationConfirmationModalProps {
   reservationId: string;
+  reservation?: Reservation | null; // PREZENTAČNÍ ÚPRAVA: Přidán optional reservation prop pro zobrazení dat bez opětovného načítání
   onClose: () => void;
 }
 
-export default function ReservationConfirmationModal({ reservationId, onClose }: ReservationConfirmationModalProps) {
-  const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ReservationConfirmationModal({ reservationId, reservation: initialReservation, onClose }: ReservationConfirmationModalProps) {
+  const [reservation, setReservation] = useState<Reservation | null>(initialReservation || null);
+  const [loading, setLoading] = useState(!initialReservation);
   const [error, setError] = useState<string | null>(null);
   const [qrCodeDeposit, setQrCodeDeposit] = useState<string | null>(null);
   const [qrCodeFull, setQrCodeFull] = useState<string | null>(null);
   const [loadingQR, setLoadingQR] = useState(false);
 
   useEffect(() => {
-    loadReservation();
-  }, [reservationId]);
+    // PREZENTAČNÍ ÚPRAVA: Načteme rezervaci pouze pokud není předána jako prop
+    if (!initialReservation) {
+      loadReservation();
+    }
+  }, [reservationId, initialReservation]);
 
   useEffect(() => {
     if (reservation) {
@@ -31,12 +35,21 @@ export default function ReservationConfirmationModal({ reservationId, onClose }:
     
     try {
       setLoading(true);
-      const response = await reservationsAPI.getById(reservationId);
+      // PREZENTAČNÍ ÚPRAVA: Timeout 15 sekund pro načtení rezervace
+      const response = await Promise.race([
+        reservationsAPI.getById(reservationId),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout při načítání rezervace')), 15000)
+        )
+      ]) as { reservation: Reservation };
       setReservation(response.reservation);
       setError(null);
     } catch (err: any) {
-      setError('Nepodařilo se načíst rezervaci.');
-      console.error(err);
+      console.error('Chyba při načítání rezervace:', err);
+      // PREZENTAČNÍ ÚPRAVA: I při chybě zobrazíme modal s chybovou hláškou, ale neblokujeme UI
+      setError(err.message === 'Timeout při načítání rezervace' 
+        ? 'Načítání rezervace trvá déle než obvykle. Zkuste prosím obnovit stránku.'
+        : 'Nepodařilo se načíst rezervaci. Rezervace byla ale úspěšně vytvořena.');
     } finally {
       setLoading(false);
     }
@@ -47,20 +60,30 @@ export default function ReservationConfirmationModal({ reservationId, onClose }:
     
     try {
       setLoadingQR(true);
+      // PREZENTAČNÍ ÚPRAVA: QR kódy načítáme s timeoutem, aby neblokovaly zobrazení modalu
       if (reservation.variableSymbol) {
         if (reservation.depositAmount) {
           try {
-            const depositQR = await reservationsAPI.getQRCode(reservationId, 'deposit');
+            // Timeout 10 sekund pro QR kódy
+            const depositQR = await Promise.race([
+              reservationsAPI.getQRCode(reservationId, 'deposit'),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+            ]) as { qrCode: string };
             setQrCodeDeposit(depositQR.qrCode);
           } catch (err) {
             console.error('Chyba při načítání QR kódu pro zálohu:', err);
+            // Nezobrazíme chybu, QR kód není kritický
           }
         }
         try {
-          const fullQR = await reservationsAPI.getQRCode(reservationId, 'full');
+          const fullQR = await Promise.race([
+            reservationsAPI.getQRCode(reservationId, 'full'),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+          ]) as { qrCode: string };
           setQrCodeFull(fullQR.qrCode);
         } catch (err) {
           console.error('Chyba při načítání QR kódu pro celou částku:', err);
+          // Nezobrazíme chybu, QR kód není kritický
         }
       }
     } catch (err) {
@@ -102,16 +125,33 @@ export default function ReservationConfirmationModal({ reservationId, onClose }:
           ×
         </button>
 
-        {loading ? (
+        {loading && !reservation ? (
           <div className="p-8 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="mt-4 text-gray-600">Načítání...</p>
           </div>
-        ) : error || !reservation ? (
+        ) : error && !reservation ? (
+          <div className="p-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h2 className="text-lg font-bold text-yellow-800 mb-2">Rezervace byla vytvořena</h2>
+              <p className="text-yellow-700 mb-4">{error}</p>
+              <p className="text-sm text-yellow-600">
+                ID rezervace: <span className="font-mono">{reservationId.substring(0, 8)}...</span>
+              </p>
+              <button
+                onClick={onClose}
+                className="mt-4 w-full text-white text-center py-2 rounded-lg font-medium transition-colors text-sm"
+                style={{ backgroundColor: '#a04e27' }}
+              >
+                Zavřít
+              </button>
+            </div>
+          </div>
+        ) : !reservation ? (
           <div className="p-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h2 className="text-lg font-bold text-red-800 mb-2">Chyba</h2>
-              <p className="text-red-700">{error || 'Rezervace nenalezena.'}</p>
+              <p className="text-red-700">Rezervace nenalezena.</p>
             </div>
           </div>
         ) : (

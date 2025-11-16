@@ -32,6 +32,7 @@ export default function ReservationForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedReservationId, setConfirmedReservationId] = useState<string | null>(null);
+  const [confirmedReservation, setConfirmedReservation] = useState<any | null>(null);
 
   useEffect(() => {
     if (roomId) {
@@ -121,12 +122,13 @@ export default function ReservationForm() {
       if (!response?.reservation?.id) {
         console.error('Response neobsahuje reservation.id:', response);
         setErrors({ general: 'Rezervace byla vytvořena, ale nepodařilo se získat ID rezervace.' });
+        setSubmitting(false);
         return;
       }
       
-      // Zobrazíme modal s potvrzením
-      setConfirmedReservationId(response.reservation.id);
-      setShowConfirmation(true);
+      // Zobrazíme modal s potvrzením - nejdřív reset formuláře, pak zobraz modal
+      const reservationId = response.reservation.id;
+      console.log('Zobrazuji modal pro rezervaci:', reservationId);
       
       // Reset formuláře
       setSelectedCheckIn(null);
@@ -138,6 +140,12 @@ export default function ReservationForm() {
         numberOfGuests: 1,
         note: '',
       });
+      
+      // Zobrazíme modal - předáme i data rezervace, aby se nemusela znovu načítat
+      setConfirmedReservationId(reservationId);
+      setConfirmedReservation(response.reservation); // Předáme data rezervace přímo
+      setShowConfirmation(true);
+      setSubmitting(false);
     } catch (error: any) {
       console.error('Chyba při vytváření rezervace:', error);
       setErrors({ general: error.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to prosím později.' });
@@ -396,9 +404,11 @@ export default function ReservationForm() {
       {showConfirmation && confirmedReservationId && (
         <ReservationConfirmationModal
           reservationId={confirmedReservationId}
+          reservation={confirmedReservation} // Předáme data rezervace přímo, aby se nemusela znovu načítat
           onClose={() => {
             setShowConfirmation(false);
             setConfirmedReservationId(null);
+            setConfirmedReservation(null);
           }}
         />
       )}
