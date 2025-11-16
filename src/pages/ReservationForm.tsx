@@ -6,6 +6,7 @@ import { validateReservation } from '../utils/reservationValidation';
 import { calculateNights as calcNights } from '../utils/dateUtils';
 import { calculateReservationPrice, getMinimumStay } from '../utils/priceCalculation';
 import type { Room, Reservation, Block, CreateReservationData } from '../types';
+import ReservationConfirmationModal from './ReservationConfirmationModal';
 
 export default function ReservationForm() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -29,6 +30,8 @@ export default function ReservationForm() {
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedReservationId, setConfirmedReservationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (roomId) {
@@ -111,11 +114,30 @@ export default function ReservationForm() {
         totalPrice,
       });
       
-      console.log('Rezervace vytvořena, naviguji na:', `/potvrzeni/${response.reservation.id}`);
-      console.log('Response:', response);
+      console.log('Rezervace vytvořena:', response);
       
-      // Použijeme absolutní cestu pro navigaci
-      navigate(`/potvrzeni/${response.reservation.id}`, { replace: false });
+      // PREZENTAČNÍ ÚPRAVA: Zobrazit modal místo navigace na novou stránku
+      // Ověříme, že response obsahuje reservation.id
+      if (!response?.reservation?.id) {
+        console.error('Response neobsahuje reservation.id:', response);
+        setErrors({ general: 'Rezervace byla vytvořena, ale nepodařilo se získat ID rezervace.' });
+        return;
+      }
+      
+      // Zobrazíme modal s potvrzením
+      setConfirmedReservationId(response.reservation.id);
+      setShowConfirmation(true);
+      
+      // Reset formuláře
+      setSelectedCheckIn(null);
+      setSelectedCheckOut(null);
+      setFormData({
+        guestName: '',
+        guestPhone: '',
+        guestEmail: '',
+        numberOfGuests: 1,
+        note: '',
+      });
     } catch (error: any) {
       console.error('Chyba při vytváření rezervace:', error);
       setErrors({ general: error.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to prosím později.' });
@@ -200,8 +222,9 @@ export default function ReservationForm() {
         </div>
 
         {/* Formulář */}
+        {/* PREZENTAČNÍ ÚPRAVA: Snížené mezery pro minimalizaci výšky */}
         <div className="flex flex-col">
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 space-y-4 h-full flex flex-col">
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-3 space-y-3 h-full flex flex-col">
             {errors.general && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-800 text-sm">{errors.general}</p>
@@ -368,6 +391,17 @@ export default function ReservationForm() {
           </form>
         </div>
       </div>
+      
+      {/* PREZENTAČNÍ ÚPRAVA: Modal s potvrzením rezervace místo navigace na novou stránku */}
+      {showConfirmation && confirmedReservationId && (
+        <ReservationConfirmationModal
+          reservationId={confirmedReservationId}
+          onClose={() => {
+            setShowConfirmation(false);
+            setConfirmedReservationId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
