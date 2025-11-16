@@ -148,50 +148,55 @@ export default function ReservationForm() {
     : 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8 text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
+    // PREZENTAČNÍ ÚPRAVA: Snížený padding pro minimalizaci výšky
+    // Pro návrat k původnímu stavu: změnit py-4 na py-12, mb-4 na mb-8, gap-6 na gap-8, space-y-4 na space-y-6, p-4 na p-6
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="mb-4 text-center">
+        <div className="flex items-center justify-center gap-4 mb-2">
           <div className="h-px bg-[#a04e27] flex-1 max-w-[100px]"></div>
-          <h1 className="text-[32px] font-bold italic" style={{ fontFamily: 'Playfair Display', color: '#a04e27' }}>
+          <h1 className="text-[28px] font-bold italic" style={{ fontFamily: 'Playfair Display', color: '#a04e27' }}>
             Rezervační formulář
           </h1>
           <div className="h-px bg-[#a04e27] flex-1 max-w-[100px]"></div>
         </div>
-        <div className="text-gray-600 space-y-2">
-          <p className="text-sm">
+        <div className="text-gray-600 space-y-1">
+          <p className="text-xs">
             Zaplacením pobytu je v souladu se Všeobecnými obchodními podmínkami je pronájem závazně rezervován.
           </p>
-          <p className="text-sm">
+          <p className="text-xs">
             <a href="#" className="text-blue-600 hover:text-blue-800 underline">Všeobecné obchodní podmínky</a> ;{' '}
             <a href="#" className="text-blue-600 hover:text-blue-800 underline">Zásady ochrany osobních údajů</a>
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* PREZENTAČNÍ ÚPRAVA: Grid s items-stretch pro srovnání výšky obou sloupců */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Kalendář */}
-        <div>
+        <div className="flex flex-col">
           {room.pricingModel === 'seasonal' && (
-            <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#e5e7eb' }}>
-              <p className="text-sm" style={{ color: '#000000' }}>
+            <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: '#e5e7eb' }}>
+              <p className="text-xs" style={{ color: '#000000' }}>
                 <strong>Minimální doba pobytu:</strong> {getMinimumStay(room)} {getMinimumStay(room) === 1 ? 'noc' : getMinimumStay(room) < 5 ? 'noci' : 'nocí'}
               </p>
             </div>
           )}
-          <Calendar
-            roomId={room.id}
-            reservations={reservations}
-            blocks={blocks}
-            selectedCheckIn={selectedCheckIn}
-            selectedCheckOut={selectedCheckOut}
-            onCheckInSelect={handleCheckInSelect}
-            onCheckOutSelect={handleCheckOutSelect}
-          />
+          <div className="flex-1">
+            <Calendar
+              roomId={room.id}
+              reservations={reservations}
+              blocks={blocks}
+              selectedCheckIn={selectedCheckIn}
+              selectedCheckOut={selectedCheckOut}
+              onCheckInSelect={handleCheckInSelect}
+              onCheckOutSelect={handleCheckOutSelect}
+            />
+          </div>
         </div>
 
         {/* Formulář */}
-        <div>
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+        <div className="flex flex-col">
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 space-y-4 h-full flex flex-col">
             {errors.general && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-800 text-sm">{errors.general}</p>
@@ -315,7 +320,8 @@ export default function ReservationForm() {
             </div>
 
             {/* Poznámka */}
-            <div>
+            {/* PREZENTAČNÍ ÚPRAVA: Zvětšené pole Poznámka pro zarovnání tlačítka se spodním okrajem šedého boxíku v kalendáři */}
+            <div className="flex-1 flex flex-col">
               <label htmlFor="note" className="block mb-2" style={{ fontSize: '14px', fontWeight: 'normal', color: '#000000' }}>
                 Poznámka
               </label>
@@ -324,17 +330,18 @@ export default function ReservationForm() {
                 name="note"
                 value={formData.note}
                 onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={8}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex-1 resize-none"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
               />
             </div>
 
             {/* Tlačítko odeslat */}
-            <button
-              type="submit"
-              disabled={submitting || !selectedCheckIn || !selectedCheckOut}
-              className="w-full text-white py-3 rounded-lg font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            <div className="mt-auto">
+              <button
+                type="submit"
+                disabled={submitting || !selectedCheckIn || !selectedCheckOut}
+                className="w-full text-white py-3 rounded-lg font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               style={{ 
                 backgroundColor: submitting || !selectedCheckIn || !selectedCheckOut ? undefined : '#a04e27',
                 ...(submitting || !selectedCheckIn || !selectedCheckOut ? {} : { '--hover-bg': '#8a3f1f' } as React.CSSProperties)
@@ -349,9 +356,10 @@ export default function ReservationForm() {
                   e.currentTarget.style.backgroundColor = '#a04e27';
                 }
               }}
-            >
-              {submitting ? 'Odesílání...' : 'Odeslat rezervaci'}
-            </button>
+              >
+                {submitting ? 'Odesílání...' : 'Odeslat rezervaci'}
+              </button>
+            </div>
           </form>
         </div>
       </div>

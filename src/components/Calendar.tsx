@@ -124,7 +124,8 @@ export default function Calendar({
   }
 
   function getDayClassName(date: Date, _status: DayStatus): string {
-    let classes = 'relative p-1.5 border border-gray-200 min-h-[70px] cursor-pointer transition-colors ';
+    // PREZENTAČNÍ ÚPRAVA: Snížená výška a padding dnů
+    let classes = 'relative p-1 border border-gray-200 min-h-[55px] cursor-pointer transition-colors ';
     
     if (!isSameMonth(date, currentMonth)) {
       classes += 'bg-gray-50 text-gray-400 ';
@@ -153,61 +154,27 @@ export default function Calendar({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
-          className="p-1 hover:bg-gray-100 rounded text-lg"
-        >
-          ←
-        </button>
-        <h3 className="text-lg font-bold">
-          {format(currentMonth, 'LLLL yyyy', { locale: cs })}
-        </h3>
-        <button
-          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="p-1 hover:bg-gray-100 rounded text-lg"
-        >
-          →
-        </button>
-      </div>
-
-      {/* Legenda */}
-      <div className="flex flex-wrap gap-3 mb-3 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 border border-green-600" style={{ backgroundColor: '#38cc50' }}></div>
-          <span>Volné</span>
+    // PREZENTAČNÍ ÚPRAVA: Snížený padding a mezery v kalendáři pro minimalizaci výšky, h-full pro srovnání výšky
+    <div className="bg-white rounded-lg shadow-md p-3 h-full flex flex-col">
+      {/* PREZENTAČNÍ ÚPRAVA: Světlý background pod výběrem měsíce pro vizuální oddělení */}
+      <div className="bg-gray-50 rounded-lg px-3 py-2 mb-2">
+        <div className="flex justify-between items-center">
+          <button
+            onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
+            className="p-2 hover:bg-gray-200 rounded text-2xl font-bold text-gray-900 transition-colors"
+          >
+            ←
+          </button>
+          <h3 className="text-lg font-bold">
+            {format(currentMonth, 'LLLL yyyy', { locale: cs })}
+          </h3>
+          <button
+            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+            className="p-2 hover:bg-gray-200 rounded text-2xl font-bold text-gray-900 transition-colors"
+          >
+            →
+          </button>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-red-400 border border-red-600"></div>
-          <span>Obsazené</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-yellow-400 border border-yellow-600"></div>
-          <span>Blokované</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-gray-400"></div>
-          <span>Minulé</span>
-        </div>
-        {selectedCheckIn && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 border-2 border-green-600" style={{ backgroundColor: '#38cc50', opacity: 0.6 }}></div>
-            <span>Příjezd</span>
-          </div>
-        )}
-        {selectedCheckOut && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-red-200 border-2 border-red-600"></div>
-            <span>Odjezd</span>
-          </div>
-        )}
-        {selectedCheckIn && selectedCheckOut && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-blue-300 border border-blue-600"></div>
-            <span>Dny pobytu</span>
-          </div>
-        )}
       </div>
 
       {/* Kalendář */}
@@ -279,8 +246,46 @@ export default function Calendar({
         })}
       </div>
 
+      {/* PREZENTAČNÍ ÚPRAVA: Legenda přesunuta pod kalendář, mb-3 pro větší mezeru od spodního boxíku */}
+      <div className="flex flex-wrap gap-2 mt-2 mb-3 text-xs">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 border border-green-600" style={{ backgroundColor: '#38cc50' }}></div>
+          <span>Volné</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-red-400 border border-red-600"></div>
+          <span>Obsazené</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-yellow-400 border border-yellow-600"></div>
+          <span>Blokované</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-gray-400"></div>
+          <span>Minulé</span>
+        </div>
+        {selectedCheckIn && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 border-2 border-green-600" style={{ backgroundColor: '#38cc50', opacity: 0.6 }}></div>
+            <span>Příjezd</span>
+          </div>
+        )}
+        {selectedCheckOut && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 bg-red-200 border-2 border-red-600"></div>
+            <span>Odjezd</span>
+          </div>
+        )}
+        {selectedCheckIn && selectedCheckOut && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 bg-blue-300 border border-blue-600"></div>
+            <span>Dny pobytu</span>
+          </div>
+        )}
+      </div>
+
       {/* Vysvětlení */}
-      <div className="mt-4 p-3 rounded-lg text-xs text-gray-800" style={{ backgroundColor: '#e5e7eb' }}>
+      <div className="mt-auto p-3 rounded-lg text-xs text-gray-800" style={{ backgroundColor: '#e5e7eb' }}>
         <p className="font-semibold mb-1.5">Jak rezervovat:</p>
         <ul className="list-disc list-inside space-y-0.5">
           <li>Klikněte na datum <strong>příjezdu</strong> (zelený rámeček, obsadí se PM)</li>

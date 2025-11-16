@@ -264,12 +264,16 @@ export default function AdminRooms() {
             >
               + Přidat Penzion
             </button>
+            {/* PREZENTAČNÍ ÚPRAVA: Tlačítko +Přidat pokoj je skryté */}
+            {/* Pro návrat k původnímu stavu: odkomentovat následující <button> */}
+            {/*
             <button
               onClick={handleNewRoom}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
             >
               + Přidat pokoj
             </button>
+            */}
           </div>
         </div>
 

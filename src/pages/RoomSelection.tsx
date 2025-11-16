@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { roomsAPI } from '../api/api';
 import type { Room } from '../types';
 
 export default function RoomSelection() {
+  const navigate = useNavigate();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -11,6 +12,21 @@ export default function RoomSelection() {
   useEffect(() => {
     loadRooms();
   }, []);
+
+  // PREZENTAČNÍ ÚPRAVA: Automaticky přesměrovat na první dostupný pokoj po načtení
+  // Pro návrat k původnímu stavu: odstranit tento useEffect
+  useEffect(() => {
+    if (!loading && rooms.length > 0 && rooms[0]?.id) {
+      const roomId = rooms[0].id;
+      // Ověříme, že roomId existuje a není prázdný
+      if (roomId && typeof roomId === 'string') {
+        // Použijeme relativní cestu bez úvodního lomítka, aby fungovala s basename
+        const targetPath = `reservace/${roomId}`;
+        console.log('Navigating to:', targetPath, 'roomId:', roomId);
+        navigate(targetPath, { replace: true });
+      }
+    }
+  }, [loading, rooms, navigate]);
 
   async function loadRooms() {
     try {
