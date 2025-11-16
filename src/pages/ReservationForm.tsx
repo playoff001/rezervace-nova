@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Calendar from '../components/Calendar';
 import { roomsAPI, reservationsAPI, calendarAPI } from '../api/api';
 import { validateReservation } from '../utils/reservationValidation';
@@ -10,7 +10,7 @@ import ReservationConfirmationModal from './ReservationConfirmationModal';
 
 export default function ReservationForm() {
   const { roomId } = useParams<{ roomId: string }>();
-  const navigate = useNavigate();
+  // PREZENTAČNÍ ÚPRAVA: navigate není potřeba, protože používáme modal místo navigace
   
   const [room, setRoom] = useState<Room | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
