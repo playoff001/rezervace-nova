@@ -43,10 +43,10 @@ export default function AdminRooms() {
     }
   }
 
-  // PREZENTAČNÍ ÚPRAVA: Funkce handleNewRoom je zakomentovaná, protože tlačítko je skryté
-  // Pro návrat k původnímu stavu: odkomentovat funkci a tlačítko
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function _handleNewRoom() {
+  // PREZENTAČNÍ ÚPRAVA: Funkce handleNewRoom je odstraněna, protože tlačítko je skryté
+  // Pro návrat k původnímu stavu: odkomentovat následující funkci a tlačítko v JSX
+  /*
+  function handleNewRoom() {
     setEditingRoom(null);
     setRoomForm({
       name: '',
@@ -67,6 +67,7 @@ export default function AdminRooms() {
     });
     setShowRoomForm(true);
   }
+  */
 
   function handleAddPenzion() {
     setEditingRoom(null);
