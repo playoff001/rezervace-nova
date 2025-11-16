@@ -716,114 +716,183 @@ app.get('/api/reservations/:id/invoice', async (req, res) => {
 
 // Funkce pro generování PDF faktury
 async function generateInvoicePDF(reservation, guesthouse) {
+  console.log('=== GENEROVÁNÍ PDF FAKTURY ===');
+  console.log('Rezervace ID:', reservation.id);
+  console.log('Invoice number:', reservation.invoiceNumber);
+  
   try {
-    // Dynamický import jsPDF pro ES modules
-    const jsPDFModule = await import('jspdf');
+    // Použijeme pdfkit pro generování PDF (HTML šablona je připravena v server/templates/invoice.html pro budoucí použití)
+    console.log('Načítám pdfkit...');
+    const PDFDocument = (await import('pdfkit')).default;
+    console.log('pdfkit načten');
     
-    // V jsPDF 2.x je to named export { jsPDF }
-    let jsPDF;
-    if (jsPDFModule.jsPDF) {
-      jsPDF = jsPDFModule.jsPDF;
-    } else if (jsPDFModule.default && jsPDFModule.default.jsPDF) {
-      jsPDF = jsPDFModule.default.jsPDF;
-    } else if (jsPDFModule.default) {
-      jsPDF = jsPDFModule.default;
-    } else {
-      throw new Error('jsPDF constructor not found in module');
+    // Vytvoříme PDF dokument
+    console.log('Vytvářím PDF dokument...');
+    const doc = new PDFDocument({
+      size: 'A4',
+      margins: { top: 20, bottom: 20, left: 20, right: 20 }
+    });
+    console.log('PDF dokument vytvořen');
+    
+    // Vytvoříme buffer pro PDF
+    const chunks = [];
+    doc.on('data', chunk => chunks.push(chunk));
+    console.log('Buffer pro PDF připraven');
+    
+    // Načteme Noto Sans font pro správné zobrazení českých znaků
+    // Nejdřív zkusíme načíst ze souboru, pak z URL
+    let fontLoaded = false;
+    
+    // Zkusíme načíst font ze souboru (pokud existuje)
+    // Zkusíme několik možných umístění
+    const possibleFontPaths = [
+      join(__dirname, 'fonts', 'NotoSans-Regular.ttf'),
+      join(__dirname, 'fonts', 'notosans-regular.ttf'),
+      join(__dirname, 'fonts', 'NotoSans.ttf'),
+      join(__dirname, 'fonts', 'notosans.ttf'),
+      join(__dirname, '..', 'fonts', 'NotoSans-Regular.ttf'),
+      join(__dirname, '..', 'fonts', 'notosans-regular.ttf'),
+    ];
+    
+    for (const fontPath of possibleFontPaths) {
+      try {
+        console.log('Zkouším načíst font ze souboru:', fontPath);
+        const fontBuffer = await fs.readFile(fontPath);
+        if (fontBuffer && fontBuffer.length > 0) {
+          doc.registerFont('NotoSans', fontBuffer);
+          doc.font('NotoSans');
+          fontLoaded = true;
+          console.log('✓ Noto Sans font načten ze souboru:', fontPath);
+          break;
+        }
+      } catch (fileError) {
+        // Tento soubor neexistuje, zkusíme další
+        continue;
+      }
     }
     
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-      compress: true
-    });
+    if (!fontLoaded) {
+      doc.font('Helvetica');
+      console.warn('⚠ Používá se standardní Helvetica font (bez podpory české diakritiky)');
+    }
     
-    // Pro správné zobrazení českých znaků v jsPDF potřebujeme použít font s Unicode podporou
-    // Standardní fonty (helvetica, times, courier) nepodporují české znaky
-    // V jsPDF 2.x můžeme použít text tak, jak je, ale pro správné zobrazení potřebujeme Unicode font
-    // Prozatím použijeme standardní font - uživatel může vidět některé znaky bez diakritiky
-    // Pro plnou podporu by bylo potřeba načíst font s Unicode podporou (např. DejaVu Sans)
+    // pdfkit používá body (points) a má margins 20
+    // A4 = 595.28 x 841.89 points
+    // Použijeme body přímo s rozestupy
+    
+    let y = 20; // Začátek od horního okraje (margins jsou už započítané)
     
     // Hlavička faktury
-    doc.setFontSize(20);
-    doc.text('FAKTURA', 20, 20);
+    doc.fontSize(20).text('FAKTURA', 20, y);
+    y += 30;
     
-    // Údaje penzionu
-    doc.setFontSize(12);
-    doc.text(guesthouse.name || 'Penzion', 20, 35);
-    doc.text(`IČO: ${guesthouse.ico || 'N/A'}`, 20, 42);
+    // Údaje penzionu (levá strana)
+    doc.fontSize(12);
+    doc.text(guesthouse.name || 'Penzion', 20, y);
+    y += 15;
+    doc.fontSize(10);
+    doc.text(`IČO: ${guesthouse.ico || 'N/A'}`, 20, y);
+    y += 12;
     if (guesthouse.dic) {
-      doc.text(`DIČ: ${guesthouse.dic}`, 20, 49);
+      doc.text(`DIČ: ${guesthouse.dic}`, 20, y);
+      y += 12;
     }
     if (guesthouse.address) {
       if (guesthouse.address.street) {
-        doc.text(guesthouse.address.street, 20, 56);
+        doc.text(guesthouse.address.street, 20, y);
+        y += 12;
       }
       if (guesthouse.address.zipCode && guesthouse.address.city) {
-        doc.text(`${guesthouse.address.zipCode} ${guesthouse.address.city}`, 20, 63);
+        doc.text(`${guesthouse.address.zipCode} ${guesthouse.address.city}`, 20, y);
+        y += 12;
       }
     }
     
-    // Údaje o faktuře
-    doc.setFontSize(10);
-    doc.text(`Číslo faktury: ${reservation.invoiceNumber || 'N/A'}`, 120, 35);
-    doc.text(`Variabilní symbol: ${reservation.variableSymbol || 'N/A'}`, 120, 42);
-    doc.text(`Datum vystavení: ${new Date(reservation.createdAt).toLocaleDateString('cs-CZ')}`, 120, 49);
-    doc.text(`Datum splatnosti: ${new Date(reservation.checkIn).toLocaleDateString('cs-CZ')}`, 120, 56);
+    // Údaje o faktuře (pravá strana)
+    y = 20; // Reset na začátek
+    doc.fontSize(10);
+    doc.text(`Číslo faktury: ${reservation.invoiceNumber || 'N/A'}`, 350, y);
+    y += 12;
+    doc.text(`Variabilní symbol: ${reservation.variableSymbol || 'N/A'}`, 350, y);
+    y += 12;
+    doc.text(`Datum vystavení: ${new Date(reservation.createdAt).toLocaleDateString('cs-CZ')}`, 350, y);
+    y += 12;
+    doc.text(`Datum splatnosti: ${new Date(reservation.checkIn).toLocaleDateString('cs-CZ')}`, 350, y);
     
     // Údaje o zákazníkovi
-    doc.setFontSize(12);
-    doc.text('Odběratel:', 20, 80);
-    doc.setFontSize(10);
-    doc.text(reservation.guestName || 'N/A', 20, 87);
-    doc.text(reservation.guestEmail || 'N/A', 20, 94);
-    doc.text(reservation.guestPhone || 'N/A', 20, 101);
+    y = 120;
+    doc.fontSize(12);
+    doc.text('Odběratel:', 20, y);
+    y += 18;
+    doc.fontSize(10);
+    doc.text(reservation.guestName || 'N/A', 20, y);
+    y += 15;
+    doc.text(reservation.guestEmail || 'N/A', 20, y);
+    y += 15;
+    doc.text(reservation.guestPhone || 'N/A', 20, y);
+    y += 25;
     
     // Tabulka položek
-    const startY = 120;
-    doc.setFontSize(10);
-    doc.text('Položka', 20, startY);
-    doc.text('Množství', 100, startY);
-    doc.text('Cena', 140, startY);
-    doc.text('Celkem', 170, startY);
+    const startY = y;
+    doc.fontSize(10);
+    doc.text('Položka', 20, y);
+    doc.text('Množství', 300, y);
+    doc.text('Cena', 400, y);
+    doc.text('Celkem', 500, y);
+    y += 16; // +4 px dolů
     
-    doc.line(20, startY + 3, 190, startY + 3);
+    // Čára pod hlavičkou tabulky
+    doc.moveTo(20, y).lineTo(575, y).stroke();
+    y += 15;
     
-    const itemY = startY + 10;
-    doc.text(`Pobyt: ${reservation.roomName || 'N/A'}`, 20, itemY);
-    doc.text(`${reservation.checkIn} - ${reservation.checkOut}`, 20, itemY + 7);
-    doc.text(`${reservation.nights} nocí`, 100, itemY + 3.5);
-    doc.text(`${Math.round(reservation.totalPrice / reservation.nights)} Kč/noc`, 140, itemY + 3.5);
-    doc.text(`${reservation.totalPrice} Kč`, 170, itemY + 3.5);
+    // Položka
+    doc.text(`Pobyt: ${reservation.roomName || 'N/A'}`, 20, y);
+    y += 15;
+    doc.text(`${reservation.checkIn} - ${reservation.checkOut}`, 20, y);
+    // Množství, cena, celkem na stejné řádce (o 6 bodů výš, aby byly zarovnané)
+    doc.text(`${reservation.nights} nocí`, 300, y - 6);
+    doc.text(`${Math.round(reservation.totalPrice / reservation.nights)} Kč/noc`, 400, y - 6);
+    doc.text(`${reservation.totalPrice} Kč`, 500, y - 6);
+    y += 16; // +4 px dolů (z 12 na 16)
     
     // Celkem
-    const totalY = itemY + 20;
-    doc.line(20, totalY - 5, 190, totalY - 5);
-    doc.setFontSize(12);
-    doc.text('Celkem k úhradě:', 140, totalY);
-    doc.text(`${reservation.totalPrice} Kč`, 170, totalY);
+    doc.moveTo(20, y).lineTo(575, y).stroke();
+    y += 8; // +4 px dolů (z 4 na 8)
+    doc.fontSize(12);
+    doc.text('Celkem k úhradě:', 380, y);
+    doc.text(`${reservation.totalPrice} Kč`, 500, y);
+    y += 25;
     
     // Záloha a doplatek
     if (reservation.depositAmount) {
-      const depositY = totalY + 10;
-      doc.setFontSize(10);
-      doc.text(`Záloha (50%): ${reservation.depositAmount} Kč`, 20, depositY);
-      doc.text(`Doplatek (50%): ${reservation.totalPrice - reservation.depositAmount} Kč`, 20, depositY + 7);
+      doc.fontSize(10);
+      doc.text(`Záloha (50%): ${reservation.depositAmount} Kč`, 20, y);
+      y += 15;
+      doc.text(`Doplatek (50%): ${reservation.totalPrice - reservation.depositAmount} Kč`, 20, y);
+      y += 25;
     }
     
     // Platební údaje
-    const paymentY = totalY + 30;
-    doc.setFontSize(10);
-    doc.text('Platební údaje:', 20, paymentY);
+    doc.fontSize(10);
+    doc.text('Platební údaje:', 20, y);
+    y += 15;
     if (guesthouse.bankAccount && guesthouse.bankAccount.accountNumber) {
-      doc.text(`Číslo účtu: ${guesthouse.bankAccount.accountNumber}`, 20, paymentY + 7);
+      doc.text(`Číslo účtu: ${guesthouse.bankAccount.accountNumber}`, 20, y);
+      y += 15;
     }
-    doc.text(`Variabilní symbol: ${reservation.variableSymbol || 'N/A'}`, 20, paymentY + 14);
+    doc.text(`Variabilní symbol: ${reservation.variableSymbol || 'N/A'}`, 20, y);
     
-    // Vrátíme PDF jako Uint8Array pro lepší kompatibilitu
-    const pdfOutput = doc.output('arraybuffer');
-    return Buffer.from(pdfOutput);
+    // Dokončíme PDF a vrátíme buffer
+    doc.end();
+    
+    // Počkáme na dokončení PDF
+    return new Promise((resolve, reject) => {
+      doc.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        resolve(buffer);
+      });
+      doc.on('error', reject);
+    });
   } catch (error) {
     console.error('Chyba při generování PDF:', error);
     throw new Error(`Nepodařilo se vygenerovat PDF: ${error.message}`);

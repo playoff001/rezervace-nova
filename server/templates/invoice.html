@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faktura {{invoiceNumber}}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #000;
+            background: #fff;
+            padding: 20mm;
+            width: 210mm;
+            min-height: 297mm;
+        }
+        
+        /* Hlavička faktury */
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .guesthouse-info {
+            flex: 1;
+        }
+        
+        .guesthouse-info h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .guesthouse-info p {
+            margin-bottom: 4px;
+            font-size: 10pt;
+        }
+        
+        .invoice-info {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .invoice-info p {
+            margin-bottom: 4px;
+            font-size: 10pt;
+        }
+        
+        /* Zákazník */
+        .customer-section {
+            margin-bottom: 25px;
+        }
+        
+        .customer-section h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .customer-section p {
+            margin-bottom: 4px;
+            font-size: 10pt;
+        }
+        
+        /* Tabulka */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .table thead th {
+            text-align: left;
+            padding: 8px 0;
+            font-weight: bold;
+            font-size: 10pt;
+            border-bottom: 1px solid #000;
+        }
+        
+        .table tbody td {
+            padding: 8px 0;
+            font-size: 10pt;
+        }
+        
+        .table tbody tr:last-child td {
+            border-top: 1px solid #000;
+            padding-top: 12px;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        /* Celkem */
+        .total-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .total-left {
+            flex: 1;
+        }
+        
+        .total-right {
+            text-align: right;
+        }
+        
+        .total-amount {
+            font-size: 12pt;
+            font-weight: bold;
+        }
+        
+        /* Platební údaje */
+        .payment-section {
+            margin-top: 30px;
+        }
+        
+        .payment-section h3 {
+            font-size: 10pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .payment-section p {
+            margin-bottom: 4px;
+            font-size: 10pt;
+        }
+        
+        /* Záloha a doplatek */
+        .deposit-info {
+            margin-bottom: 15px;
+        }
+        
+        .deposit-info p {
+            margin-bottom: 4px;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FAKTURA</h1>
+        <div class="header-content">
+            <div class="guesthouse-info">
+                <h2>{{guesthouseName}}</h2>
+                <p>IČO: {{guesthouseIco}}</p>
+                {{#if guesthouseDic}}
+                <p>DIČ: {{guesthouseDic}}</p>
+                {{/if}}
+                {{#if guesthouseStreet}}
+                <p>{{guesthouseStreet}}</p>
+                {{/if}}
+                {{#if guesthouseCity}}
+                <p>{{guesthouseZipCode}} {{guesthouseCity}}</p>
+                {{/if}}
+            </div>
+            <div class="invoice-info">
+                <p><strong>Číslo faktury:</strong> {{invoiceNumber}}</p>
+                <p><strong>Variabilní symbol:</strong> {{variableSymbol}}</p>
+                <p><strong>Datum vystavení:</strong> {{dateIssued}}</p>
+                <p><strong>Datum splatnosti:</strong> {{dateDue}}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="customer-section">
+        <h3>Odběratel:</h3>
+        <p>{{guestName}}</p>
+        <p>{{guestEmail}}</p>
+        <p>{{guestPhone}}</p>
+    </div>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Položka</th>
+                <th class="text-center">Množství</th>
+                <th class="text-right">Cena</th>
+                <th class="text-right">Celkem</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <strong>Pobyt: {{roomName}}</strong><br>
+                    {{checkIn}} - {{checkOut}}
+                </td>
+                <td class="text-center">{{nights}} nocí</td>
+                <td class="text-right">{{pricePerNight}} Kč/noc</td>
+                <td class="text-right"><strong>{{totalPrice}} Kč</strong></td>
+            </tr>
+            <tr>
+                <td colspan="3" class="text-right"><strong>Celkem k úhradě:</strong></td>
+                <td class="text-right"><strong>{{totalPrice}} Kč</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="total-section">
+        <div class="total-left">
+            {{#if depositAmount}}
+            <div class="deposit-info">
+                <p>Záloha (50%): {{depositAmount}} Kč</p>
+                <p>Doplatek (50%): {{finalPayment}} Kč</p>
+            </div>
+            {{/if}}
+            
+            <div class="payment-section">
+                <h3>Platební údaje:</h3>
+                {{#if bankAccount}}
+                <p>Číslo účtu: {{bankAccount}}</p>
+                {{/if}}
+                <p>Variabilní symbol: {{variableSymbol}}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+

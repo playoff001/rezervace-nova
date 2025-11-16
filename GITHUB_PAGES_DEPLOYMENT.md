@@ -149,3 +149,5 @@ URL bude: `https://username.github.io/repo-name` (nebo `https://username.github.
 
 GitHub Pages je zdarma, ale má omezení. Pro produkční aplikaci doporučuji **Netlify** (také zdarma, ale lepší funkce).
 
+
+

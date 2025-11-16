@@ -156,3 +156,5 @@ Můžu ti připravit:
 
 Řekni, kterou možnost hostingu preferuješ, a připravím ti konkrétní návod a potřebné soubory!
 
+
+

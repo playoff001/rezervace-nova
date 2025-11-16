@@ -253,3 +253,5 @@ Po testování můžeš:
 
 Potřebuješ pomoc? Napiš mi! 🚀
 
+
+

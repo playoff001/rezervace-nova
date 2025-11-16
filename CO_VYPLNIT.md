@@ -195,3 +195,5 @@ Pak vyplň:
 
 Potřebuješ pomoc s konkrétními hodnotami? Napiš mi! 🚀
 
+
+

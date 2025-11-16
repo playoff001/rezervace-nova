@@ -206,3 +206,5 @@ Aplikace by teď měla fungovat:
 
 Potřebuješ pomoc? Napiš mi! 🚀
 
+
+
