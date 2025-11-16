@@ -111,8 +111,13 @@ export default function ReservationForm() {
         totalPrice,
       });
       
-      navigate(`/potvrzeni/${response.reservation.id}`);
+      console.log('Rezervace vytvořena, naviguji na:', `/potvrzeni/${response.reservation.id}`);
+      console.log('Response:', response);
+      
+      // Použijeme absolutní cestu pro navigaci
+      navigate(`/potvrzeni/${response.reservation.id}`, { replace: false });
     } catch (error: any) {
+      console.error('Chyba při vytváření rezervace:', error);
       setErrors({ general: error.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to prosím později.' });
     } finally {
       setSubmitting(false);
