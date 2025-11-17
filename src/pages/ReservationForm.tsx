@@ -108,26 +108,6 @@ export default function ReservationForm() {
     }
   }
 
-  async function loadData() {
-    if (!roomId) return;
-    
-    try {
-      setLoading(true);
-      const [roomRes, calendarRes] = await Promise.all([
-        roomsAPI.getById(roomId),
-        calendarAPI.getRoomCalendar(roomId),
-      ]);
-      
-      setRoom(roomRes.room);
-      setReservations(calendarRes.reservations || []);
-      setBlocks(calendarRes.blocks || []);
-    } catch (error) {
-      console.error('Chyba při načítání dat:', error);
-      setError('Nepodařilo se načíst data. Zkuste to prosím později.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function handleCheckInSelect(date: string) {
     setSelectedCheckIn(date);
