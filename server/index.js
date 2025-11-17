@@ -179,26 +179,125 @@ async function generateInvoiceNumber() {
   return `${year}-${String(number).padStart(3, '0')}`;
 }
 
+// Konverze čísla účtu do IBAN formátu (pokud není už v IBAN)
+function formatAccountToIBAN(accountNumber) {
+  if (!accountNumber) return '';
+  
+  // Pokud už je v IBAN formátu (začíná CZ), vrať jak je
+  const cleaned = accountNumber.replace(/\s/g, '').toUpperCase();
+  if (cleaned.startsWith('CZ') && cleaned.length === 24) {
+    return cleaned;
+  }
+  
+  let prefix = '';
+  let account = '';
+  let bankCode = '';
+  
+  // Pokud je ve formátu prefix-číslo/bankovní_kód (např. 000000-6450062003/5500 nebo 19-2000145399/0800)
+  const matchWithPrefix = accountNumber.match(/(\d+)-(\d+)\/(\d+)/);
+  // Pokud je ve formátu číslo/bankovní_kód (např. 2001756714/2010 nebo 6450062003/5500)
+  const matchWithoutPrefix = accountNumber.match(/(\d+)\/(\d+)/);
+  
+  if (matchWithPrefix) {
+    // Formát: prefix-číslo/bankovní_kód
+    prefix = matchWithPrefix[1];
+    account = matchWithPrefix[2];
+    bankCode = matchWithPrefix[3];
+  } else if (matchWithoutPrefix) {
+    // Formát: číslo/bankovní_kód (prefix je prázdný nebo 0)
+    prefix = '';
+    account = matchWithoutPrefix[1];
+    bankCode = matchWithoutPrefix[2];
+  } else {
+    // Pokud není ve standardním formátu, zkus to použít jak je
+    console.warn('Neznámý formát čísla účtu:', accountNumber);
+    return cleaned;
+  }
+  
+  // Vytvoříme IBAN: CZ + 2 kontrolní číslice + 4 bankovní kód + 6 prefix (doplněno nulami) + 10 číslo účtu
+  // IBAN pro ČR má 24 znaků: CZ(2) + kontrolní číslice(2) + bankovní kód(4) + prefix(6) + číslo účtu(10)
+  const accountPadded = account.padStart(10, '0'); // 10 číslic
+  const prefixPadded = prefix.padStart(6, '0'); // 6 číslic (prefix)
+  const bankCodePadded = bankCode.padStart(4, '0'); // 4 číslice (bankovní kód)
+  const bban = bankCodePadded + prefixPadded + accountPadded; // BBAN = 4 bankovní kód + 6 prefix + 10 číslo účtu
+  
+  // Výpočet IBAN kontrolních číslic podle ISO 13616
+  // 1. Přesuneme první 4 znaky (CZ00) na konec: bban + CZ00
+  // 2. Převádíme písmena na čísla (C=12, Z=35)
+  // 3. Vypočítáme mod 97
+  // 4. Kontrolní číslice = 98 - mod 97
+  const rearranged = bban + 'CZ00';
+  let numericString = '';
+  for (let i = 0; i < rearranged.length; i++) {
+    const char = rearranged[i];
+    if (char >= '0' && char <= '9') {
+      numericString += char;
+    } else if (char >= 'A' && char <= 'Z') {
+      numericString += (char.charCodeAt(0) - 55).toString();
+    }
+  }
+  
+  // Vypočítáme mod 97 pomocí BigInt (protože číslo může být velké)
+  let remainder = 0n;
+  for (let i = 0; i < numericString.length; i++) {
+    remainder = (remainder * 10n + BigInt(numericString[i])) % 97n;
+  }
+  
+  const checkDigits = String(98 - Number(remainder)).padStart(2, '0');
+  const iban = `CZ${checkDigits}${bban}`;
+  
+  console.log('Konverze účtu na IBAN:', { accountNumber, prefix, account, bankCode, iban });
+  
+  return iban;
+}
+
 // Generování QR kódu pro SPD platbu
 async function generateQRCodeSPD(accountNumber, amount, variableSymbol, message = '') {
   // Formát SPD: SPD*1.0*ACC:CZ6508000000192000145399*AM:480.50*CC:CZK*MSG:PLATBA ZA ZBOZI*X-VS:1234567890
-  // Odstraníme pomlčky z VS pro QR kód
-  const vsClean = variableSymbol.replace(/-/g, '');
-  let spdString = `SPD*1.0*ACC:${accountNumber}*AM:${amount.toFixed(2)}*CC:CZK`;
-  if (message) {
-    // Omezíme délku zprávy na 60 znaků
-    const msg = message.substring(0, 60).replace(/\*/g, '');
-    spdString += `*MSG:${msg}`;
+  // Převedeme číslo účtu do IBAN formátu
+  const ibanAccount = formatAccountToIBAN(accountNumber);
+  
+  if (!ibanAccount) {
+    console.error('Nelze převést číslo účtu do IBAN formátu:', accountNumber);
+    return null;
   }
+  
+  // Odstraníme pomlčky a mezery z VS pro QR kód
+  const vsClean = variableSymbol ? variableSymbol.replace(/[-\s]/g, '') : '';
+  
+  // Formát částky - musí být s desetinnou tečkou
+  const amountFormatted = parseFloat(amount).toFixed(2);
+  
+  // IBAN musí být bez mezer
+  const ibanClean = ibanAccount.replace(/\s/g, '');
+  
+  let spdString = `SPD*1.0*ACC:${ibanClean}*AM:${amountFormatted}*CC:CZK`;
+  
+  if (message) {
+    // Omezíme délku zprávy na 60 znaků, odstraníme diakritiku a speciální znaky
+    // Odstraníme diakritiku pomocí normalizace
+    let msg = message.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // Odstraníme speciální znaky, ponecháme jen písmena, čísla a mezery
+    msg = msg.replace(/[^\w\s]/g, '').replace(/\*/g, '');
+    // Omezíme délku
+    msg = msg.substring(0, 60).trim();
+    if (msg) {
+      spdString += `*MSG:${msg}`;
+    }
+  }
+  
   if (vsClean) {
     spdString += `*X-VS:${vsClean}`;
   }
   
+  console.log('Generování QR kódu SPD:', spdString);
+  
   try {
     const qrCodeDataURL = await QRCode.toDataURL(spdString, {
-      errorCorrectionLevel: 'M',
+      errorCorrectionLevel: 'H', // Vyšší error correction pro lepší čitelnost
       type: 'image/png',
-      width: 300,
+      width: 300, // Původní velikost
+      margin: 2, // Okraje kolem QR kódu
     });
     return qrCodeDataURL;
   } catch (error) {
@@ -1008,6 +1107,21 @@ async function sendReservationEmail(reservation) {
       );
     }
     
+    // Generování PDF faktury jako přílohy
+    let pdfAttachment = null;
+    try {
+      const pdfBuffer = await generateInvoicePDF(reservation, guesthouse);
+      pdfAttachment = {
+        filename: `faktura-${reservation.invoiceNumber || reservation.id}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      };
+      console.log('PDF faktura vygenerována pro email');
+    } catch (error) {
+      console.error('Chyba při generování PDF faktury pro email:', error);
+      // Pokračujeme i bez PDF - email se pošle bez přílohy
+    }
+    
     // Formátování pole "from" - pokud je vyplněné jméno, zkombinujeme ho s emailem
     let fromAddress = emailConfig.user;
     if (emailConfig.from && emailConfig.from.trim()) {
@@ -1059,8 +1173,11 @@ async function sendReservationEmail(reservation) {
           <img src="${qrCodeFull}" alt="QR kód pro celou částku" style="max-width: 300px;" />
         ` : ''}
         
+        ${pdfAttachment ? `<p><strong>Faktura je přiložena k tomuto e-mailu.</strong></p>` : ''}
+        
         <p>Brzy se na vás těšíme!</p>
       `,
+      attachments: pdfAttachment ? [pdfAttachment] : [],
     };
     
     await transporter.sendMail(mailOptions);
