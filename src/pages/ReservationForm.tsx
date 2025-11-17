@@ -243,7 +243,7 @@ export default function ReservationForm() {
     // PREZENTAČNÍ ÚPRAVA: Snížený padding pro minimalizaci výšky
     // Pro návrat k původnímu stavu: změnit py-4 na py-12, mb-4 na mb-8, gap-6 na gap-8, space-y-4 na space-y-6, p-4 na p-6
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div className="mb-4 text-center">
+      <div className="mb-4 text-center pt-8 sm:pt-4">
         <div className="flex items-center justify-center gap-4 mb-2">
           <div className="h-px bg-[#a04e27] flex-1 max-w-[100px]"></div>
           <h1 className="text-[28px] font-bold italic" style={{ fontFamily: 'Playfair Display', color: '#a04e27' }}>

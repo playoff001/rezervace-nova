@@ -52,12 +52,12 @@ export default function Layout() {
       {/* Pro návrat k původnímu stavu: odstranit tento Link */}
       <Link
         to="/admin"
-        className="fixed top-4 right-4 z-50 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors"
         title="Administrace"
       >
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-5 w-5" 
+          className="h-4 w-4 sm:h-5 sm:w-5" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"
