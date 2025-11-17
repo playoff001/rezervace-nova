@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
 import ReservationForm from './pages/ReservationForm';
 import ReservationConfirmation from './pages/ReservationConfirmation';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -13,21 +12,27 @@ import AdminLayout from './components/admin/AdminLayout';
 
 function App() {
   // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL PŘED renderováním routeru
-  useEffect(() => {
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
-    if (pathParts.length > 0) {
-      const firstPart = pathParts[0];
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      
-      // Pokud je první část UUID a není to admin, reservace nebo potvrzeni, přesměruj na root
-      if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
-        console.log('UUID detected in URL, redirecting to root:', window.location.pathname);
-        window.history.replaceState(null, '', '/');
-        window.location.href = '/';
-        return;
-      }
+  // Kontrola UUID musí být SYNCHRONNÍ, ne v useEffect (ten se spouští až po renderu)
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
+  if (pathParts.length > 0) {
+    const firstPart = pathParts[0];
+    
+    // Pokud je první část UUID (a není to admin, reservace nebo potvrzeni), přesměruj na root
+    if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
+      console.log('UUID detected as first part in URL, redirecting to root:', window.location.pathname);
+      window.location.replace('/');
+      return <div></div>;
     }
-  }, []);
+    
+    // Pokud je první část "reservace" a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
+    if (firstPart === 'reservace' && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
+      console.log('UUID detected in /reservace/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
+      window.location.replace('/');
+      return <div></div>;
+    }
+  }
 
   // PREZENTAČNÍ ÚPRAVA: Opravena logika basename - ignorujeme UUID v URL (ID rezervace) - fix pro UUID redirect
   // Zjistíme base path z environment variable nebo použijeme prázdný string (root)
