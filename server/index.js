@@ -20,7 +20,7 @@ const DATA_DIR = join(__dirname, 'data');
 // CORS - v produkci povolíme jen konkrétní domény
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://aplikace.eu', 'http://aplikace.eu'];
 
 app.use(cors({
   origin: function (origin, callback) {
