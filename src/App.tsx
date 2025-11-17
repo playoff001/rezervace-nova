@@ -13,32 +13,39 @@ import AdminLayout from './components/admin/AdminLayout';
 function App() {
   // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL PŘED renderováním routeru
   // Kontrola UUID musí být SYNCHRONNÍ, ne v useEffect (ten se spouští až po renderu)
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  
-  if (pathParts.length > 0) {
-    const firstPart = pathParts[0];
+  // Spouštíme redirect POUZE při prvním načtení, ne při každém renderu
+  if (typeof window !== 'undefined' && !(window as any).__redirectChecked) {
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
-    // Pokud je první část UUID (a není to admin, rezervace/rezervace nebo potvrzeni), přesměruj na root
-    if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'rezervace' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
-      console.log('UUID detected as first part in URL, redirecting to root:', window.location.pathname);
-      window.location.replace('/');
-      return <div></div>;
+    if (pathParts.length > 0) {
+      const firstPart = pathParts[0];
+      
+      // Pokud je první část UUID (a není to admin, rezervace/rezervace nebo potvrzeni), přesměruj na root
+      if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'rezervace' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
+        console.log('UUID detected as first part in URL, redirecting to root:', window.location.pathname);
+        (window as any).__redirectChecked = true;
+        window.location.replace('/');
+        return <div></div>;
+      }
+      
+      // Pokud je první část "rezervace" nebo "reservace" (starý název) a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
+      if ((firstPart === 'rezervace' || firstPart === 'reservace') && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
+        console.log('UUID detected in /' + firstPart + '/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
+        (window as any).__redirectChecked = true;
+        window.location.replace('/');
+        return <div></div>;
+      }
+      
+      // Pokud je první část "reservace" (starý název se "s"), přesměruj na root (kompatibilita se starými URL)
+      if (firstPart === 'reservace') {
+        console.log('Old "reservace" path detected, redirecting to root:', window.location.pathname);
+        (window as any).__redirectChecked = true;
+        window.location.replace('/');
+        return <div></div>;
+      }
     }
-    
-    // Pokud je první část "rezervace" nebo "reservace" (starý název) a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
-    if ((firstPart === 'rezervace' || firstPart === 'reservace') && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
-      console.log('UUID detected in /' + firstPart + '/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
-      window.location.replace('/');
-      return <div></div>;
-    }
-    
-    // Pokud je první část "reservace" (starý název se "s"), přesměruj na root (kompatibilita se starými URL)
-    if (firstPart === 'reservace') {
-      console.log('Old "reservace" path detected, redirecting to root:', window.location.pathname);
-      window.location.replace('/');
-      return <div></div>;
-    }
+    (window as any).__redirectChecked = true;
   }
 
   // PREZENTAČNÍ ÚPRAVA: Opravena logika basename - ignorujeme UUID v URL (ID rezervace) - fix pro UUID redirect

@@ -440,8 +440,10 @@ app.post('/api/reservations', async (req, res) => {
     
     console.log('Rezervace vytvořena:', newReservation.id, 'VS:', variableSymbol, 'Faktura:', invoiceNumber);
     
-    // Odeslání e-mailu a SMS (pokud je nakonfigurováno)
-    await sendReservationNotifications(newReservation);
+    // Odeslání e-mailu a SMS (pokud je nakonfigurováno) - asynchronně v pozadí, aby neblokovalo odpověď
+    sendReservationNotifications(newReservation).catch(err => {
+      console.error('Chyba při odesílání notifikací (rezervace byla vytvořena):', err);
+    });
     
     res.json({ reservation: newReservation });
   } catch (error) {
