@@ -17,10 +17,12 @@ export default function Layout() {
       // Pokud je první část UUID a není to admin, reservace nebo potvrzeni, přesměruj na root
       if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
         console.log('UUID detected as first path part, redirecting to root:', location.pathname);
-        navigate('/', { replace: true });
+        // Použijeme window.location.replace pro okamžité přesměrování a změnu URL
+        window.location.replace('/');
+        return;
       }
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname]);
   
   return (
     <div className="min-h-screen bg-gray-50 relative">
