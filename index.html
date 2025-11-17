@@ -11,6 +11,31 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL PŘED načtením Reactu
+      (function() {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (pathParts.length > 0) {
+          const firstPart = pathParts[0];
+          
+          // Pokud je první část UUID (a není to admin, reservace nebo potvrzeni), přesměruj na root
+          if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
+            console.log('UUID detected as first part in URL, redirecting to root:', window.location.pathname);
+            window.location.replace('/');
+            return;
+          }
+          
+          // Pokud je první část "reservace" a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
+          if (firstPart === 'reservace' && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
+            console.log('UUID detected in /reservace/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
+            window.location.replace('/');
+            return;
+          }
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
