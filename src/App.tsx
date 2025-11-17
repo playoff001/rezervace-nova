@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import RoomSelection from './pages/RoomSelection';
 import ReservationForm from './pages/ReservationForm';
 import ReservationConfirmation from './pages/ReservationConfirmation';
 import AdminLogin from './pages/admin/AdminLogin';
