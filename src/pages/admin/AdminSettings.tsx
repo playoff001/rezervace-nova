@@ -105,6 +105,10 @@ export default function AdminSettings() {
         guesthouse: {
           ...currentConfig.guesthouse,
           ...guesthouse,
+          bankAccount: {
+            ...currentConfig.guesthouse?.bankAccount,
+            ...guesthouse.bankAccount,
+          },
         },
         email: {
           ...currentConfig.email,
