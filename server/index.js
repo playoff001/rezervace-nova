@@ -973,6 +973,9 @@ async function sendReservationEmail(reservation) {
         user: emailConfig.user,
         pass: emailConfig.password,
       },
+      connectionTimeout: 60000, // 60 sekund pro navázání spojení
+      socketTimeout: 60000, // 60 sekund pro socket timeout
+      greetingTimeout: 30000, // 30 sekund pro greeting timeout
     });
     
     // Generování QR kódu pro zálohu
