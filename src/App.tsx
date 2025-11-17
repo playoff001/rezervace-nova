@@ -19,16 +19,16 @@ function App() {
   if (pathParts.length > 0) {
     const firstPart = pathParts[0];
     
-    // Pokud je první část UUID (a není to admin, reservace nebo potvrzeni), přesměruj na root
-    if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
+    // Pokud je první část UUID (a není to admin, rezervace nebo potvrzeni), přesměruj na root
+    if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'rezervace' && firstPart !== 'potvrzeni') {
       console.log('UUID detected as first part in URL, redirecting to root:', window.location.pathname);
       window.location.replace('/');
       return <div></div>;
     }
     
-    // Pokud je první část "reservace" a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
-    if (firstPart === 'reservace' && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
-      console.log('UUID detected in /reservace/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
+    // Pokud je první část "rezervace" a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
+    if (firstPart === 'rezervace' && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
+      console.log('UUID detected in /rezervace/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
       window.location.replace('/');
       return <div></div>;
     }
@@ -68,7 +68,7 @@ function App() {
           {/* PREZENTAČNÍ ÚPRAVA: Root route zobrazuje ReservationForm přímo, ne RoomSelection */}
           {/* Pro návrat k původnímu stavu: změnit index element na <RoomSelection /> */}
           <Route index element={<ReservationForm />} />
-          <Route path="reservace/:roomId" element={<ReservationForm />} />
+          <Route path="rezervace/:roomId" element={<ReservationForm />} />
           <Route path="potvrzeni/:reservationId" element={<ReservationConfirmation />} />
         </Route>
 

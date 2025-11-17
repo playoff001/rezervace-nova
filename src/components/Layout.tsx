@@ -5,17 +5,17 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /reservace/ nebo /potvrzeni/) - fix UUID redirect
+  // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /rezervace/ nebo /potvrzeni/) - fix UUID redirect
   useEffect(() => {
-    // Zkontroluj, jestli je v URL UUID jako první část (ne v /reservace/ nebo /potvrzeni/)
+    // Zkontroluj, jestli je v URL UUID jako první část (ne v /rezervace/ nebo /potvrzeni/)
     const pathParts = location.pathname.split('/').filter(Boolean);
     
     if (pathParts.length > 0) {
       const firstPart = pathParts[0];
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
-      // Pokud je první část UUID a není to admin, reservace nebo potvrzeni, přesměruj na root
-      if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
+      // Pokud je první část UUID a není to admin, rezervace nebo potvrzeni, přesměruj na root
+      if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'rezervace' && firstPart !== 'potvrzeni') {
         console.log('UUID detected as first path part, redirecting to root:', location.pathname);
         // Změň URL v prohlížeči bez reloadu
         window.history.replaceState(null, '', '/');
