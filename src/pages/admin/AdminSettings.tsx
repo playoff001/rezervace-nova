@@ -19,6 +19,7 @@ export default function AdminSettings() {
       accountNumber: '',
       bankCode: '',
     },
+    depositPercentage: 50,
   });
   const [email, setEmail] = useState<EmailConfig>({
     host: '',
@@ -60,6 +61,7 @@ export default function AdminSettings() {
             accountNumber: response.config.guesthouse.bankAccount?.accountNumber || '',
             bankCode: response.config.guesthouse.bankAccount?.bankCode || '',
           },
+          depositPercentage: response.config.guesthouse.depositPercentage || 50,
         });
       }
       if (response.config?.email) {
@@ -304,6 +306,32 @@ export default function AdminSettings() {
             </div>
             <p className="mt-2 text-sm text-gray-500">
               * Číslo účtu je nutné pro generování QR kódů a faktur
+            </p>
+          </div>
+
+          {/* Výška zálohy */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Výška zálohy *
+            </label>
+            <select
+              value={guesthouse.depositPercentage || 50}
+              onChange={(e) =>
+                setGuesthouse({
+                  ...guesthouse,
+                  depositPercentage: parseInt(e.target.value, 10),
+                })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={20}>20% záloha / 80% doplatek</option>
+              <option value={30}>30% záloha / 70% doplatek</option>
+              <option value={40}>40% záloha / 60% doplatek</option>
+              <option value={50}>50% záloha / 50% doplatek</option>
+              <option value={60}>60% záloha / 40% doplatek</option>
+            </select>
+            <p className="mt-2 text-sm text-gray-500">
+              * Toto nastavení se použije pro všechny nové rezervace
             </p>
           </div>
 

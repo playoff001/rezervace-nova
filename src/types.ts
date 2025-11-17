@@ -119,6 +119,7 @@ export interface GuesthouseSettings {
     accountNumber: string; // číslo účtu (IBAN nebo formát CZ)
     bankCode?: string; // kód banky (pokud není v IBAN)
   };
+  depositPercentage?: number; // výška zálohy v procentech (20, 30, 40, 50, 60) - výchozí 50
 }
 
 // Data pro vytvoření rezervace

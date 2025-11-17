@@ -120,6 +120,7 @@ function getDefaultData(filename) {
           accountNumber: '',
           bankCode: '',
         },
+        depositPercentage: 50, // Výchozí 50% záloha
       },
       counters: {
         variableSymbol: {}, // { "2025": 1, "2026": 1, ... }
@@ -412,7 +413,11 @@ app.post('/api/reservations', async (req, res) => {
     // Generování variabilního symbolu a čísla faktury
     const variableSymbol = await generateVariableSymbol();
     const invoiceNumber = await generateInvoiceNumber();
-    const depositAmount = Math.round(req.body.totalPrice * 0.5); // 50% záloha
+    
+    // Načtení procenta zálohy z konfigurace (výchozí 50%)
+    const config = await loadData('config.json');
+    const depositPercentage = config.guesthouse?.depositPercentage || 50;
+    const depositAmount = Math.round(req.body.totalPrice * (depositPercentage / 100));
 
     console.log('Vytváření rezervace s platebními údaji:', {
       variableSymbol,
@@ -910,10 +915,13 @@ async function generateInvoicePDF(reservation, guesthouse) {
     
     // Záloha a doplatek
     if (reservation.depositAmount) {
+      // Vypočítáme procento zálohy (zaokrouhlíme na celé číslo)
+      const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
+      const finalPaymentPercent = 100 - depositPercent;
       doc.fontSize(10);
-      doc.text(`Záloha (50%): ${reservation.depositAmount} Kč`, 20, y);
+      doc.text(`Záloha (${depositPercent}%): ${reservation.depositAmount} Kč`, 20, y);
       y += 15;
-      doc.text(`Doplatek (50%): ${reservation.totalPrice - reservation.depositAmount} Kč`, 20, y);
+      doc.text(`Doplatek (${finalPaymentPercent}%): ${reservation.totalPrice - reservation.depositAmount} Kč`, 20, y);
       y += 25;
     }
     
@@ -1022,8 +1030,12 @@ async function sendReservationEmail(reservation) {
         <h3>Platební údaje:</h3>
         ${guesthouse?.bankAccount?.accountNumber ? `<p><strong>Číslo účtu:</strong> ${guesthouse.bankAccount.accountNumber}</p>` : ''}
         ${reservation.variableSymbol ? `<p><strong>Variabilní symbol:</strong> ${reservation.variableSymbol}</p>` : ''}
-        ${reservation.depositAmount ? `<p><strong>Záloha (50%):</strong> ${reservation.depositAmount} Kč</p>` : ''}
-        ${reservation.depositAmount ? `<p><strong>Doplatek (50%):</strong> ${reservation.totalPrice - reservation.depositAmount} Kč</p>` : ''}
+        ${reservation.depositAmount ? (() => {
+          const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
+          const finalPaymentPercent = 100 - depositPercent;
+          return `<p><strong>Záloha (${depositPercent}%):</strong> ${reservation.depositAmount} Kč</p>
+        <p><strong>Doplatek (${finalPaymentPercent}%):</strong> ${reservation.totalPrice - reservation.depositAmount} Kč</p>`;
+        })() : ''}
         
         ${qrCodeDeposit ? `
           <h4>QR kód pro platbu zálohy:</h4>
