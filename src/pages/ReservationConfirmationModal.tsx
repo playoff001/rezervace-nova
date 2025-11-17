@@ -223,14 +223,17 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                     {reservation.totalPrice} Kč
                   </dd>
                 </div>
-                {reservation.depositAmount && (
-                  <div>
-                    <dt className="text-gray-500">Záloha</dt>
-                    <dd className="text-gray-900">
-                      {reservation.depositAmount} Kč
-                    </dd>
-                  </div>
-                )}
+                {reservation.depositAmount && (() => {
+                  const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
+                  return (
+                    <div>
+                      <dt className="text-gray-500">Záloha</dt>
+                      <dd className="text-gray-900">
+                        {reservation.depositAmount} Kč ({depositPercent}%)
+                      </dd>
+                    </div>
+                  );
+                })()}
                 <div>
                   <dt className="text-gray-500">Jméno</dt>
                   <dd className="text-gray-900 truncate">{reservation.guestName}</dd>
@@ -260,20 +263,26 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                           </dd>
                         </div>
                       )}
-                      {reservation.depositAmount && (
-                        <div>
-                          <dt className="text-gray-500">Záloha</dt>
-                          <dd className="font-semibold text-gray-900">
-                            {reservation.depositAmount} Kč
-                          </dd>
-                        </div>
-                      )}
-                      <div>
-                        <dt className="text-gray-500">Doplatek</dt>
-                        <dd className="font-semibold text-gray-900">
-                          {reservation.totalPrice - (reservation.depositAmount || 0)} Kč
-                        </dd>
-                      </div>
+                      {reservation.depositAmount && (() => {
+                        const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
+                        const finalPaymentPercent = 100 - depositPercent;
+                        return (
+                          <>
+                            <div>
+                              <dt className="text-gray-500">Záloha</dt>
+                              <dd className="font-semibold text-gray-900">
+                                {reservation.depositAmount} Kč ({depositPercent}%)
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-gray-500">Doplatek</dt>
+                              <dd className="font-semibold text-gray-900">
+                                {reservation.totalPrice - (reservation.depositAmount || 0)} Kč ({finalPaymentPercent}%)
+                              </dd>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </dl>
                   </div>
                   
