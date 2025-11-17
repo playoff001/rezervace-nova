@@ -18,6 +18,8 @@ export default function AdminSettings() {
     bankAccount: {
       accountNumber: '',
       bankCode: '',
+      iban: '',
+      bic: '',
     },
     depositPercentage: 50,
   });
@@ -60,6 +62,8 @@ export default function AdminSettings() {
           bankAccount: {
             accountNumber: response.config.guesthouse.bankAccount?.accountNumber || '',
             bankCode: response.config.guesthouse.bankAccount?.bankCode || '',
+            iban: response.config.guesthouse.bankAccount?.iban || '',
+            bic: response.config.guesthouse.bankAccount?.bic || '',
           },
           depositPercentage: response.config.guesthouse.depositPercentage || 50,
         });
@@ -270,42 +274,101 @@ export default function AdminSettings() {
           {/* Bankovní účet */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bankovní účet *
+              Bankovní účet
             </label>
             <div className="space-y-4">
-              <input
-                type="text"
-                value={guesthouse.bankAccount.accountNumber}
-                onChange={(e) =>
-                  setGuesthouse({
-                    ...guesthouse,
-                    bankAccount: {
-                      ...guesthouse.bankAccount,
-                      accountNumber: e.target.value,
-                    },
-                  })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Číslo účtu (např. CZ6508000000192000145399 nebo 19-2000145399/0800)"
-              />
-              <input
-                type="text"
-                value={guesthouse.bankAccount.bankCode || ''}
-                onChange={(e) =>
-                  setGuesthouse({
-                    ...guesthouse,
-                    bankAccount: {
-                      ...guesthouse.bankAccount,
-                      bankCode: e.target.value,
-                    },
-                  })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Kód banky (volitelné, pokud není v čísle účtu)"
-              />
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Číslo účtu s předčíslím (pro informaci)
+                </label>
+                <input
+                  type="text"
+                  value={guesthouse.bankAccount.accountNumber}
+                  onChange={(e) =>
+                    setGuesthouse({
+                      ...guesthouse,
+                      bankAccount: {
+                        ...guesthouse.bankAccount,
+                        accountNumber: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Např. 000000-6450062003/5500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Pro zobrazení zákazníkům, kteří nechtějí platit QR kódem
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Kód banky (pro informaci)
+                </label>
+                <input
+                  type="text"
+                  value={guesthouse.bankAccount.bankCode || ''}
+                  onChange={(e) =>
+                    setGuesthouse({
+                      ...guesthouse,
+                      bankAccount: {
+                        ...guesthouse.bankAccount,
+                        bankCode: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Např. 5500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  IBAN * (pro QR kód)
+                </label>
+                <input
+                  type="text"
+                  value={guesthouse.bankAccount.iban || ''}
+                  onChange={(e) =>
+                    setGuesthouse({
+                      ...guesthouse,
+                      bankAccount: {
+                        ...guesthouse.bankAccount,
+                        iban: e.target.value.toUpperCase().replace(/\s/g, ''),
+                      },
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Např. CZ9555000000006450062003"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Povinné pro generování QR kódů
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  BIC/SWIFT * (pro QR kód)
+                </label>
+                <input
+                  type="text"
+                  value={guesthouse.bankAccount.bic || ''}
+                  onChange={(e) =>
+                    setGuesthouse({
+                      ...guesthouse,
+                      bankAccount: {
+                        ...guesthouse.bankAccount,
+                        bic: e.target.value.toUpperCase().replace(/\s/g, ''),
+                      },
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Např. RZBCCZPP"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Povinné pro generování QR kódů
+                </p>
+              </div>
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              * Číslo účtu je nutné pro generování QR kódů a faktur
+              * IBAN a BIC/SWIFT jsou nutné pro generování QR kódů. Číslo účtu a kód banky slouží pouze pro informaci zákazníkům.
             </p>
           </div>
 
@@ -339,7 +402,7 @@ export default function AdminSettings() {
           <div className="flex justify-end pt-4 border-t border-gray-200">
             <button
               onClick={handleSave}
-              disabled={saving || !guesthouse.name || !guesthouse.ico || !guesthouse.bankAccount.accountNumber}
+              disabled={saving || !guesthouse.name || !guesthouse.ico || !guesthouse.bankAccount.iban || !guesthouse.bankAccount.bic}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Ukládání...' : 'Uložit nastavení'}

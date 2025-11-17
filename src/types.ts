@@ -116,8 +116,10 @@ export interface GuesthouseSettings {
     country: string;
   };
   bankAccount: {
-    accountNumber: string; // číslo účtu (IBAN nebo formát CZ)
-    bankCode?: string; // kód banky (pokud není v IBAN)
+    accountNumber: string; // číslo účtu s předčíslím (např. 000000-6450062003/5500) - pro informaci
+    bankCode?: string; // kód banky (např. 5500) - pro informaci
+    iban: string; // IBAN (např. CZ9555000000006450062003) - pro QR kód
+    bic?: string; // BIC/SWIFT kód (např. RZBCCZPP) - pro QR kód
   };
   depositPercentage?: number; // výška zálohy v procentech (20, 30, 40, 50, 60) - výchozí 50
 }

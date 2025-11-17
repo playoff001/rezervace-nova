@@ -117,8 +117,10 @@ function getDefaultData(filename) {
           country: 'Česká republika',
         },
         bankAccount: {
-          accountNumber: '',
-          bankCode: '',
+          accountNumber: '', // číslo účtu s předčíslím (např. 000000-6450062003/5500) - pro informaci
+          bankCode: '', // kód banky (např. 5500) - pro informaci
+          iban: '', // IBAN (např. CZ9555000000006450062003) - pro QR kód
+          bic: '', // BIC/SWIFT kód (např. RZBCCZPP) - pro QR kód
         },
         depositPercentage: 50, // Výchozí 50% záloha
       },
@@ -179,86 +181,19 @@ async function generateInvoiceNumber() {
   return `${year}-${String(number).padStart(3, '0')}`;
 }
 
-// Konverze čísla účtu do IBAN formátu (pokud není už v IBAN)
-function formatAccountToIBAN(accountNumber) {
-  if (!accountNumber) return '';
-  
-  // Pokud už je v IBAN formátu (začíná CZ), vrať jak je
-  const cleaned = accountNumber.replace(/\s/g, '').toUpperCase();
-  if (cleaned.startsWith('CZ') && cleaned.length === 24) {
-    return cleaned;
-  }
-  
-  let prefix = '';
-  let account = '';
-  let bankCode = '';
-  
-  // Pokud je ve formátu prefix-číslo/bankovní_kód (např. 000000-6450062003/5500 nebo 19-2000145399/0800)
-  const matchWithPrefix = accountNumber.match(/(\d+)-(\d+)\/(\d+)/);
-  // Pokud je ve formátu číslo/bankovní_kód (např. 2001756714/2010 nebo 6450062003/5500)
-  const matchWithoutPrefix = accountNumber.match(/(\d+)\/(\d+)/);
-  
-  if (matchWithPrefix) {
-    // Formát: prefix-číslo/bankovní_kód
-    prefix = matchWithPrefix[1];
-    account = matchWithPrefix[2];
-    bankCode = matchWithPrefix[3];
-  } else if (matchWithoutPrefix) {
-    // Formát: číslo/bankovní_kód (prefix je prázdný nebo 0)
-    prefix = '';
-    account = matchWithoutPrefix[1];
-    bankCode = matchWithoutPrefix[2];
-  } else {
-    // Pokud není ve standardním formátu, zkus to použít jak je
-    console.warn('Neznámý formát čísla účtu:', accountNumber);
-    return cleaned;
-  }
-  
-  // Vytvoříme IBAN: CZ + 2 kontrolní číslice + 4 bankovní kód + 6 prefix (doplněno nulami) + 10 číslo účtu
-  // IBAN pro ČR má 24 znaků: CZ(2) + kontrolní číslice(2) + bankovní kód(4) + prefix(6) + číslo účtu(10)
-  const accountPadded = account.padStart(10, '0'); // 10 číslic
-  const prefixPadded = prefix.padStart(6, '0'); // 6 číslic (prefix)
-  const bankCodePadded = bankCode.padStart(4, '0'); // 4 číslice (bankovní kód)
-  const bban = bankCodePadded + prefixPadded + accountPadded; // BBAN = 4 bankovní kód + 6 prefix + 10 číslo účtu
-  
-  // Výpočet IBAN kontrolních číslic podle ISO 13616
-  // 1. Přesuneme první 4 znaky (CZ00) na konec: bban + CZ00
-  // 2. Převádíme písmena na čísla (C=12, Z=35)
-  // 3. Vypočítáme mod 97
-  // 4. Kontrolní číslice = 98 - mod 97
-  const rearranged = bban + 'CZ00';
-  let numericString = '';
-  for (let i = 0; i < rearranged.length; i++) {
-    const char = rearranged[i];
-    if (char >= '0' && char <= '9') {
-      numericString += char;
-    } else if (char >= 'A' && char <= 'Z') {
-      numericString += (char.charCodeAt(0) - 55).toString();
-    }
-  }
-  
-  // Vypočítáme mod 97 pomocí BigInt (protože číslo může být velké)
-  let remainder = 0n;
-  for (let i = 0; i < numericString.length; i++) {
-    remainder = (remainder * 10n + BigInt(numericString[i])) % 97n;
-  }
-  
-  const checkDigits = String(98 - Number(remainder)).padStart(2, '0');
-  const iban = `CZ${checkDigits}${bban}`;
-  
-  console.log('Konverze účtu na IBAN:', { accountNumber, prefix, account, bankCode, iban });
-  
-  return iban;
-}
-
 // Generování QR kódu pro SPD platbu
-async function generateQRCodeSPD(accountNumber, amount, variableSymbol, message = '') {
-  // Formát SPD: SPD*1.0*ACC:CZ6508000000192000145399*AM:480.50*CC:CZK*MSG:PLATBA ZA ZBOZI*X-VS:1234567890
-  // Převedeme číslo účtu do IBAN formátu
-  const ibanAccount = formatAccountToIBAN(accountNumber);
+// Podle standardu SPD a dokumentace Toret QR platby
+async function generateQRCodeSPD(iban, bic, amount, variableSymbol, message = '') {
+  // Formát SPD: SPD*1.0*ACC:IBAN*AM:480.50*CC:CZK*MSG:PLATBA ZA ZBOZI*X-VS:1234567890*BIC:BICCODE
+  // IBAN a BIC jsou povinné pro správné fungování QR kódu v bankovních aplikacích
   
-  if (!ibanAccount) {
-    console.error('Nelze převést číslo účtu do IBAN formátu:', accountNumber);
+  if (!iban) {
+    console.error('IBAN je povinný pro generování QR kódu');
+    return null;
+  }
+  
+  if (!bic) {
+    console.error('BIC/SWIFT je povinný pro generování QR kódu');
     return null;
   }
   
@@ -268,10 +203,15 @@ async function generateQRCodeSPD(accountNumber, amount, variableSymbol, message 
   // Formát částky - musí být s desetinnou tečkou
   const amountFormatted = parseFloat(amount).toFixed(2);
   
-  // IBAN musí být bez mezer
-  const ibanClean = ibanAccount.replace(/\s/g, '');
+  // IBAN a BIC musí být bez mezer a velkými písmeny
+  const ibanClean = iban.replace(/\s/g, '').toUpperCase();
+  const bicClean = bic.replace(/\s/g, '').toUpperCase();
   
+  // Základní SPD formát
   let spdString = `SPD*1.0*ACC:${ibanClean}*AM:${amountFormatted}*CC:CZK`;
+  
+  // Přidáme BIC/SWIFT (podle dokumentace Toret je to nutné)
+  spdString += `*BIC:${bicClean}`;
   
   if (message) {
     // Omezíme délku zprávy na 60 znaků, odstraníme diakritiku a speciální znaky
@@ -801,10 +741,11 @@ app.get('/api/reservations/:id/qrcode', async (req, res) => {
     }
     
     const config = await loadData('config.json');
-    const accountNumber = config.guesthouse?.bankAccount?.accountNumber;
+    const iban = config.guesthouse?.bankAccount?.iban;
+    const bic = config.guesthouse?.bankAccount?.bic;
     
-    if (!accountNumber) {
-      return res.status(400).json({ error: 'Číslo účtu není nastaveno' });
+    if (!iban || !bic) {
+      return res.status(400).json({ error: 'IBAN nebo BIC/SWIFT není nastaveno' });
     }
     
     // Pro zálohu nebo celkovou částku
@@ -813,7 +754,8 @@ app.get('/api/reservations/:id/qrcode', async (req, res) => {
       : reservation.totalPrice;
     
     const qrCode = await generateQRCodeSPD(
-      accountNumber,
+      iban,
+      bic,
       amount,
       reservation.variableSymbol || '',
       `Rezervace ${reservation.id}`
@@ -1032,6 +974,14 @@ async function generateInvoicePDF(reservation, guesthouse) {
       doc.text(`Číslo účtu: ${guesthouse.bankAccount.accountNumber}`, 20, y);
       y += 15;
     }
+    if (guesthouse.bankAccount && guesthouse.bankAccount.iban) {
+      doc.text(`IBAN: ${guesthouse.bankAccount.iban}`, 20, y);
+      y += 15;
+    }
+    if (guesthouse.bankAccount && guesthouse.bankAccount.bic) {
+      doc.text(`BIC/SWIFT: ${guesthouse.bankAccount.bic}`, 20, y);
+      y += 15;
+    }
     doc.text(`Variabilní symbol: ${reservation.variableSymbol || 'N/A'}`, 20, y);
     
     // Dokončíme PDF a vrátíme buffer
@@ -1090,17 +1040,19 @@ async function sendReservationEmail(reservation) {
     let qrCodeDeposit = null;
     let qrCodeFull = null;
     
-    if (guesthouse?.bankAccount?.accountNumber && reservation.variableSymbol) {
+    if (guesthouse?.bankAccount?.iban && guesthouse?.bankAccount?.bic && reservation.variableSymbol) {
       if (reservation.depositAmount) {
         qrCodeDeposit = await generateQRCodeSPD(
-          guesthouse.bankAccount.accountNumber,
+          guesthouse.bankAccount.iban,
+          guesthouse.bankAccount.bic,
           reservation.depositAmount,
           reservation.variableSymbol,
           `Zaloha rezervace ${reservation.id}`
         );
       }
       qrCodeFull = await generateQRCodeSPD(
-        guesthouse.bankAccount.accountNumber,
+        guesthouse.bankAccount.iban,
+        guesthouse.bankAccount.bic,
         reservation.totalPrice,
         reservation.variableSymbol,
         `Rezervace ${reservation.id}`
@@ -1155,6 +1107,8 @@ async function sendReservationEmail(reservation) {
         
         <h3>Platební údaje:</h3>
         ${guesthouse?.bankAccount?.accountNumber ? `<p><strong>Číslo účtu:</strong> ${guesthouse.bankAccount.accountNumber}</p>` : ''}
+        ${guesthouse?.bankAccount?.iban ? `<p><strong>IBAN:</strong> ${guesthouse.bankAccount.iban}</p>` : ''}
+        ${guesthouse?.bankAccount?.bic ? `<p><strong>BIC/SWIFT:</strong> ${guesthouse.bankAccount.bic}</p>` : ''}
         ${reservation.variableSymbol ? `<p><strong>Variabilní symbol:</strong> ${reservation.variableSymbol}</p>` : ''}
         ${reservation.depositAmount ? (() => {
           const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
