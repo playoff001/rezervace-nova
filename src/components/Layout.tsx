@@ -1,6 +1,27 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export default function Layout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /reservace/ nebo /potvrzeni/)
+  useEffect(() => {
+    // Zkontroluj, jestli je v URL UUID jako první část (ne v /reservace/ nebo /potvrzeni/)
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    
+    if (pathParts.length > 0) {
+      const firstPart = pathParts[0];
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // Pokud je první část UUID a není to admin, reservace nebo potvrzeni, přesměruj na root
+      if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
+        console.log('UUID detected as first path part, redirecting to root:', location.pathname);
+        navigate('/', { replace: true });
+      }
+    }
+  }, [location.pathname, navigate]);
+  
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* PREZENTAČNÍ ÚPRAVA: Horní lišta je skrytá pro minimalizaci výšky (pro iframe) */}
