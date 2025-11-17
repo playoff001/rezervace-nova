@@ -11,7 +11,7 @@ import Layout from './components/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 
 function App() {
-  // PREZENTAČNÍ ÚPRAVA: Opravena logika basename - ignorujeme UUID v URL (ID rezervace)
+  // PREZENTAČNÍ ÚPRAVA: Opravena logika basename - ignorujeme UUID v URL (ID rezervace) - fix pro UUID redirect
   // Zjistíme base path z environment variable nebo použijeme prázdný string (root)
   // Pokud je v URL UUID (36 znaků s pomlčkami), ignorujeme ho a použijeme root
   const getBasePath = () => {

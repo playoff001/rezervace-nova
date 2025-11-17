@@ -476,7 +476,7 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* Smazání všech rezervací */}
+      {/* Smazání všech rezervací - Nebezpečná zóna */}
       <div className="bg-white rounded-lg shadow p-6 border-2 border-red-200">
         <h2 className="text-xl font-bold text-red-900 mb-2">Nebezpečná zóna</h2>
         <p className="text-sm text-gray-600 mb-4">

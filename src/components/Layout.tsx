@@ -5,7 +5,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /reservace/ nebo /potvrzeni/)
+  // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /reservace/ nebo /potvrzeni/) - fix UUID redirect
   useEffect(() => {
     // Zkontroluj, jestli je v URL UUID jako první část (ne v /reservace/ nebo /potvrzeni/)
     const pathParts = location.pathname.split('/').filter(Boolean);
