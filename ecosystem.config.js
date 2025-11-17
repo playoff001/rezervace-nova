@@ -5,7 +5,7 @@
 // Logy: pm2 logs
 // Restart: pm2 restart rezervace
 
-module.exports = {
+export default {
   apps: [{
     name: 'rezervace',
     script: 'server/index.js',
