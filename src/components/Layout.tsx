@@ -1,8 +1,9 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   
   // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /reservace/ nebo /potvrzeni/) - fix UUID redirect
   useEffect(() => {
@@ -16,12 +17,14 @@ export default function Layout() {
       // Pokud je první část UUID a není to admin, reservace nebo potvrzeni, přesměruj na root
       if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
         console.log('UUID detected as first path part, redirecting to root:', location.pathname);
-        // Použijeme window.location.replace pro okamžité přesměrování a změnu URL
-        window.location.replace('/');
+        // Změň URL v prohlížeči bez reloadu
+        window.history.replaceState(null, '', '/');
+        // Přesměruj pomocí React Router
+        navigate('/', { replace: true });
         return;
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
   
   return (
     <div className="min-h-screen bg-gray-50 relative">
