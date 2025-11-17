@@ -343,6 +343,49 @@ app.get('/api/reservations', async (req, res) => {
   }
 });
 
+// Smazání všech rezervací - MUSÍ být před routami s :id
+app.post('/api/reservations/delete-all', async (req, res) => {
+  try {
+    console.log('DELETE ALL RESERVATIONS - Request received');
+    const { password } = req.body;
+    
+    if (!password) {
+      console.log('DELETE ALL RESERVATIONS - Password missing');
+      return res.status(400).json({ error: 'Heslo je povinné' });
+    }
+    
+    // Ověření hesla
+    const adminData = await loadData('admin.json');
+    if (!adminData.admin) {
+      console.log('DELETE ALL RESERVATIONS - Admin account not found');
+      return res.status(500).json({ error: 'Admin účet není nastaven' });
+    }
+    
+    const isValid = await bcrypt.compare(password, adminData.admin.passwordHash);
+    if (!isValid) {
+      console.log('DELETE ALL RESERVATIONS - Invalid password');
+      return res.status(401).json({ error: 'Neplatné heslo' });
+    }
+    
+    // Smazání všech rezervací
+    const data = await loadData('reservations.json');
+    const deletedCount = data.reservations ? data.reservations.length : 0;
+    data.reservations = [];
+    await saveData('reservations.json', data);
+    
+    console.log(`DELETE ALL RESERVATIONS - Successfully deleted ${deletedCount} reservations`);
+    const text = deletedCount === 1 ? 'rezervace' : deletedCount < 5 ? 'rezervace' : 'rezervací';
+    res.json({ 
+      success: true, 
+      message: `Smazáno ${deletedCount} ${text}`,
+      deletedCount 
+    });
+  } catch (error) {
+    console.error('DELETE ALL RESERVATIONS - Error:', error);
+    res.status(500).json({ error: error.message || 'Nepodařilo se smazat rezervace' });
+  }
+});
+
 app.get('/api/reservations/:id', async (req, res) => {
   try {
     const data = await loadData('reservations.json');

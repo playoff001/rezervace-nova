@@ -17,6 +17,7 @@ export default function ReservationForm() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const [selectedCheckIn, setSelectedCheckIn] = useState<string | null>(null);
   const [selectedCheckOut, setSelectedCheckOut] = useState<string | null>(null);
@@ -34,11 +35,43 @@ export default function ReservationForm() {
   const [confirmedReservationId, setConfirmedReservationId] = useState<string | null>(null);
   const [confirmedReservation, setConfirmedReservation] = useState<any | null>(null);
 
+  // PREZENTAČNÍ ÚPRAVA: Načteme první dostupný pokoj, pokud není roomId v URL
   useEffect(() => {
     if (roomId) {
       loadData();
+    } else {
+      // Pokud není roomId, načteme první dostupný pokoj
+      loadFirstAvailableRoom();
     }
   }, [roomId]);
+
+  async function loadFirstAvailableRoom() {
+    try {
+      setLoading(true);
+      const response = await roomsAPI.getAll();
+      const availableRooms = response.rooms.filter((room: Room) => room.available);
+      
+      if (availableRooms.length > 0 && availableRooms[0]?.id) {
+        const firstRoomId = availableRooms[0].id;
+        // Načteme data pro první pokoj
+        const [roomRes, calendarRes] = await Promise.all([
+          roomsAPI.getById(firstRoomId),
+          calendarAPI.getRoomCalendar(firstRoomId),
+        ]);
+        
+        setRoom(roomRes.room);
+        setReservations(calendarRes.reservations || []);
+        setBlocks(calendarRes.blocks || []);
+      } else {
+        setError('Momentálně nejsou k dispozici žádné pokoje.');
+      }
+    } catch (error) {
+      console.error('Chyba při načítání pokojů:', error);
+      setError('Nepodařilo se načíst pokoje. Zkuste to prosím později.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loadData() {
     if (!roomId) return;
@@ -55,7 +88,7 @@ export default function ReservationForm() {
       setBlocks(calendarRes.blocks || []);
     } catch (error) {
       console.error('Chyba při načítání dat:', error);
-      alert('Nepodařilo se načíst data. Zkuste to prosím později.');
+      setError('Nepodařilo se načíst data. Zkuste to prosím později.');
     } finally {
       setLoading(false);
     }
@@ -149,7 +182,6 @@ export default function ReservationForm() {
     } catch (error: any) {
       console.error('Chyba při vytváření rezervace:', error);
       setErrors({ general: error.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to prosím později.' });
-    } finally {
       setSubmitting(false);
     }
   }
@@ -160,6 +192,16 @@ export default function ReservationForm() {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">Načítání...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !room) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
         </div>
       </div>
     );

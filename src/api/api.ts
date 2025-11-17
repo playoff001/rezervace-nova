@@ -86,6 +86,10 @@ export const reservationsAPI = {
           return response.blob();
         });
       },
+  deleteAll: (password: string) => fetchAPI<{ success: boolean; message: string; deletedCount: number }>('/reservations/delete-all', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  }),
 };
 
 // API pro blokace

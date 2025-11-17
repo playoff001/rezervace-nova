@@ -12,16 +12,41 @@ import Layout from './components/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 
 function App() {
-  // Zjistíme base path z environment variable nebo z window.location
-  const basePath = import.meta.env.VITE_BASE_PATH || 
-    (window.location.pathname.split('/').filter(Boolean)[0] ? `/${window.location.pathname.split('/').filter(Boolean)[0]}` : '');
+  // PREZENTAČNÍ ÚPRAVA: Opravena logika basename - ignorujeme UUID v URL (ID rezervace)
+  // Zjistíme base path z environment variable nebo použijeme prázdný string (root)
+  // Pokud je v URL UUID (36 znaků s pomlčkami), ignorujeme ho a použijeme root
+  const getBasePath = () => {
+    if (import.meta.env.VITE_BASE_PATH) {
+      return import.meta.env.VITE_BASE_PATH;
+    }
+    
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    if (pathParts.length === 0) {
+      return '';
+    }
+    
+    // Pokud první část vypadá jako UUID (36 znaků s pomlčkami), ignorujeme ho
+    const firstPart = pathParts[0];
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(firstPart)) {
+      // Je to UUID, použijeme root
+      return '';
+    }
+    
+    // Jinak použijeme první část jako basename (např. pro subdirectory deployment)
+    return `/${firstPart}`;
+  };
+  
+  const basePath = getBasePath();
   
   return (
     <BrowserRouter basename={basePath}>
       <Routes>
         {/* Uživatelská část */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<RoomSelection />} />
+          {/* PREZENTAČNÍ ÚPRAVA: Root route zobrazuje ReservationForm přímo, ne RoomSelection */}
+          {/* Pro návrat k původnímu stavu: změnit index element na <RoomSelection /> */}
+          <Route index element={<ReservationForm />} />
           <Route path="reservace/:roomId" element={<ReservationForm />} />
           <Route path="potvrzeni/:reservationId" element={<ReservationConfirmation />} />
         </Route>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { adminAPI } from '../../api/api';
+import { adminAPI, reservationsAPI } from '../../api/api';
 import type { GuesthouseSettings, EmailConfig, SMSConfig } from '../../types';
 
 export default function AdminSettings() {
@@ -33,6 +33,9 @@ export default function AdminSettings() {
     apiUrl: '',
     sender: '',
   });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -115,6 +118,30 @@ export default function AdminSettings() {
       alert('Nepodařilo se uložit nastavení');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteAllReservations() {
+    if (!deletePassword) {
+      alert('Zadejte prosím heslo');
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      console.log('Attempting to delete all reservations...');
+      const response = await reservationsAPI.deleteAll(deletePassword);
+      console.log('Delete response:', response);
+      const count = response.deletedCount;
+      const text = count === 1 ? 'rezervace' : count < 5 ? 'rezervace' : 'rezervací';
+      alert(`Úspěšně smazáno ${count} ${text}`);
+      setShowDeleteConfirm(false);
+      setDeletePassword('');
+    } catch (error: any) {
+      console.error('Error deleting reservations:', error);
+      alert(error.message || 'Nepodařilo se smazat rezervace. Zkontroluj konzoli prohlížeče (F12) pro více informací.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -447,6 +474,58 @@ export default function AdminSettings() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Smazání všech rezervací */}
+      <div className="bg-white rounded-lg shadow p-6 border-2 border-red-200">
+        <h2 className="text-xl font-bold text-red-900 mb-2">Nebezpečná zóna</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Tato akce je nevratná. Všechny rezervace budou trvale smazány.
+        </p>
+
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+          >
+            Smazat všechny rezervace
+          </button>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Zadejte admin heslo pro potvrzení:
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                className="w-full px-4 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Admin heslo"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={handleDeleteAllReservations}
+                disabled={deleting || !deletePassword}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {deleting ? 'Mazání...' : 'Potvrdit smazání'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletePassword('');
+                }}
+                disabled={deleting}
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors"
+              >
+                Zrušit
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       </div>
     </div>
