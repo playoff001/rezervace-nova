@@ -1,11 +1,11 @@
 // PM2 konfigurace pro správu procesů v produkci
 // Instalace: npm install -g pm2
-// Spuštění: pm2 start ecosystem.config.js
+// Spuštění: pm2 start ecosystem.config.cjs
 // Status: pm2 status
 // Logy: pm2 logs
 // Restart: pm2 restart rezervace
 
-export default {
+module.exports = {
   apps: [{
     name: 'rezervace',
     script: 'server/index.js',
