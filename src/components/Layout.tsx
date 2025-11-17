@@ -1,8 +1,7 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export default function Layout() {
-  const navigate = useNavigate();
   const location = useLocation();
   
   // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /reservace/ nebo /potvrzeni/) - fix UUID redirect
