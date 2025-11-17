@@ -1008,8 +1008,20 @@ async function sendReservationEmail(reservation) {
       );
     }
     
+    // Formátování pole "from" - pokud je vyplněné jméno, zkombinujeme ho s emailem
+    let fromAddress = emailConfig.user;
+    if (emailConfig.from && emailConfig.from.trim()) {
+      // Pokud from obsahuje <, je to už ve správném formátu "Jméno <email>"
+      if (emailConfig.from.includes('<')) {
+        fromAddress = emailConfig.from;
+      } else {
+        // Jinak zkombinujeme jméno s emailem
+        fromAddress = `${emailConfig.from} <${emailConfig.user}>`;
+      }
+    }
+    
     const mailOptions = {
-      from: emailConfig.from || emailConfig.user,
+      from: fromAddress,
       to: reservation.guestEmail,
       subject: `Potvrzení rezervace #${reservation.id}`,
       html: `
