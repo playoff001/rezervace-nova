@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format, parseISO, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isBefore, isAfter } from 'date-fns';
 import { cs } from 'date-fns/locale/cs';
 import type { Reservation, Block, DayStatus } from '../types';
@@ -24,6 +24,41 @@ export default function Calendar({
   onCheckOutSelect,
 }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  // Swipe gesta pro mobilní zařízení
+  const minSwipeDistance = 50; // Minimální vzdálenost pro swipe (v pixelech)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      // Swipe doleva = další měsíc
+      setCurrentMonth(addMonths(currentMonth, 1));
+    } else if (isRightSwipe) {
+      // Swipe doprava = předchozí měsíc
+      setCurrentMonth(addMonths(currentMonth, -1));
+    }
+
+    // Reset
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -155,7 +190,13 @@ export default function Calendar({
 
   return (
     // PREZENTAČNÍ ÚPRAVA: Snížený padding a mezery v kalendáři pro minimalizaci výšky, h-full pro srovnání výšky
-    <div className="bg-white rounded-lg shadow-md p-3 h-full flex flex-col">
+    <div 
+      ref={calendarRef}
+      className="bg-white rounded-lg shadow-md p-3 h-full flex flex-col touch-pan-y"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* PREZENTAČNÍ ÚPRAVA: Světlý background pod výběrem měsíce pro vizuální oddělení */}
       <div className="bg-gray-50 rounded-lg px-3 py-2 mb-2">
         <div className="flex justify-between items-center">
