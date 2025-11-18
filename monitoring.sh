@@ -13,19 +13,23 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
-# Funkce pro odeslání e-mailu
+# Funkce pro odeslání e-mailu (používá nodemailer místo postfix)
 send_alert() {
     local subject="$1"
     local message="$2"
     
     # Odešli e-mail pouze pokud jsme ho ještě neposlali (aby nebyly spam)
     if [ ! -f "$ALERT_FILE" ]; then
-        echo "$message" | mail -s "$subject" "$EMAIL" 2>/dev/null
-        if [ $? -eq 0 ]; then
+        # Použij Node.js skript pro odesílání e-mailu přes nodemailer
+        # Skript je v /var/www/rezervace-nova/
+        local project_dir="/var/www/rezervace-nova"
+        local result=$(cd "$project_dir" && node send-alert-email.js "$subject" "$message" "$EMAIL" 2>&1)
+        
+        if [ $? -eq 0 ] && echo "$result" | grep -q "OK"; then
             log "ALERT: E-mail odeslán - $subject"
             touch "$ALERT_FILE"
         else
-            log "CHYBA: Nepodařilo se odeslat e-mail"
+            log "CHYBA: Nepodařilo se odeslat e-mail: $result"
         fi
     fi
 }
