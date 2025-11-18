@@ -36,6 +36,35 @@ export default function ReservationForm() {
   const [confirmedReservationId, setConfirmedReservationId] = useState<string | null>(null);
   const [confirmedReservation, setConfirmedReservation] = useState<any | null>(null);
 
+  // Oprava pro mobilní klávesnici - automatické scrollování při focus
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        // Počkej malou chvíli, aby se klávesnice otevřela
+        setTimeout(() => {
+          target.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+        }, 300);
+      }
+    };
+
+    // Přidej event listener na všechny inputy a textarey
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+      input.addEventListener('focus', handleFocus);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('focus', handleFocus);
+      });
+    };
+  }, [room]); // Re-run když se načte pokoj
+
   // PREZENTAČNÍ ÚPRAVA: Načteme první dostupný pokoj, pokud není roomId v URL nebo pokud roomId není platné ID pokoje
   useEffect(() => {
     if (roomId) {
@@ -344,6 +373,11 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
               {errors.guestName && (
                 <p className="mt-1 text-sm text-red-600">{errors.guestName}</p>
@@ -364,6 +398,11 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
               {errors.guestPhone && (
                 <p className="mt-1 text-sm text-red-600">{errors.guestPhone}</p>
@@ -384,6 +423,11 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
               {errors.guestEmail && (
                 <p className="mt-1 text-sm text-red-600">{errors.guestEmail}</p>
@@ -406,6 +450,11 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
               {errors.numberOfGuests && (
                 <p className="mt-1 text-sm text-red-600">{errors.numberOfGuests}</p>
@@ -426,6 +475,11 @@ export default function ReservationForm() {
                 rows={8}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex-1 resize-none"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
             </div>
 

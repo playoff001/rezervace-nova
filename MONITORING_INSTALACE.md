@@ -98,3 +98,4 @@ sudo systemctl start nginx
 # Počkej další kontrolu - alert by se měl resetovat
 ```
 
+

@@ -58,3 +58,4 @@ echo "Logy: sudo tail -f /var/log/rezervace-monitoring.log"
 echo "Test: sudo /usr/local/bin/rezervace-monitoring.sh"
 echo "Crontab: sudo crontab -l"
 
+
