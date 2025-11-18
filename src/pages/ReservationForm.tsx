@@ -38,7 +38,7 @@ export default function ReservationForm() {
 
   // Oprava pro mobilní klávesnici - automatické scrollování při focus
   useEffect(() => {
-    const handleFocus = (e: FocusEvent) => {
+    const handleFocus = (e: Event) => {
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         // Počkej malou chvíli, aby se klávesnice otevřela
@@ -55,12 +55,12 @@ export default function ReservationForm() {
     // Přidej event listener na všechny inputy a textarey
     const inputs = document.querySelectorAll('input, textarea');
     inputs.forEach(input => {
-      input.addEventListener('focus', handleFocus);
+      input.addEventListener('focus', handleFocus as EventListener);
     });
 
     return () => {
       inputs.forEach(input => {
-        input.removeEventListener('focus', handleFocus);
+        input.removeEventListener('focus', handleFocus as EventListener);
       });
     };
   }, [room]); // Re-run když se načte pokoj
