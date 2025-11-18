@@ -20,7 +20,7 @@ const DATA_DIR = join(__dirname, 'data');
 // CORS - v produkci povolíme jen konkrétní domény
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000', 'https://aplikace.eu', 'http://aplikace.eu'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://aplikace.eu', 'http://aplikace.eu', 'https://bestwebs.fun', 'http://bestwebs.fun'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -33,6 +33,16 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Middleware pro podporu iframe - povolíme zobrazení v iframe
+app.use((req, res, next) => {
+  // Odstraníme X-Frame-Options, pokud existuje (aby iframe fungoval)
+  res.removeHeader('X-Frame-Options');
+  // Nastavíme Content-Security-Policy pro povolení iframe
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://bestwebs.fun http://bestwebs.fun https://aplikace.eu http://aplikace.eu;");
+  next();
+});
+
 app.use(express.json());
 
 // Zajištění existence data složky
