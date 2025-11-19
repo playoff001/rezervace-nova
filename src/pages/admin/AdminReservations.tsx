@@ -159,42 +159,39 @@ export default function AdminReservations() {
         </div>
 
         {/* Tabulka */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Vytvořeno
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pokoj
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Termín
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Noci
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Cena
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Host
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Telefon
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     E-mail
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Stav
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Akce
                   </th>
                 </tr>
@@ -215,37 +212,34 @@ export default function AdminReservations() {
                         : ''
                     }`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
                       {formatDateTime(reservation.createdAt)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
                       {reservation.id.slice(0, 8)}...
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {reservation.roomName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
                       <div>{new Date(reservation.checkIn).toLocaleDateString('cs-CZ')} (PM)</div>
                       <div>{new Date(reservation.checkOut).toLocaleDateString('cs-CZ')} (AM)</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
                       {reservation.nights}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
                       {reservation.totalPrice} Kč
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
                       {reservation.guestName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
                       {reservation.guestPhone}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500 truncate max-w-[150px]">
                       {reservation.guestEmail}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                        className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded-full ${
                           reservation.status === 'pending'
                             ? 'bg-yellow-100 text-yellow-800'
                             : reservation.status === 'confirmed'
@@ -264,7 +258,7 @@ export default function AdminReservations() {
                           : 'Zrušeno'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium">
                       <Link
                         to={`/admin/rezervace/${reservation.id}`}
                         className="text-blue-600 hover:text-blue-900"
@@ -277,6 +271,11 @@ export default function AdminReservations() {
               </tbody>
             </table>
           </div>
+        </div>
+        
+        {/* Mobilní zobrazení - skryté */}
+        <div className="md:hidden text-center py-8 text-gray-500">
+          <p>Tabulka rezervací je dostupná pouze na desktopu.</p>
         </div>
       </div>
   );
