@@ -19,8 +19,15 @@ const DATA_DIR = join(__dirname, 'data');
 // Middleware
 // CORS - v produkci povolíme jen konkrétní domény
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://aplikace.eu',
+      'http://aplikace.eu',
+      'https://www.aplikace.eu',
+      'http://www.aplikace.eu'
+    ];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -28,6 +35,8 @@ app.use(cors({
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.error(`CORS blocked origin: ${origin}`);
+      console.error(`Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
