@@ -204,11 +204,11 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
             </div>
 
             {/* Detaily rezervace - kompaktní */}
-            <div className="border-t border-b border-gray-200 py-3 mb-3">
-              <h2 className="text-sm font-bold text-gray-900 mb-2">
+            <div className="border-t border-b border-gray-200 py-2 mb-3">
+              <h2 className="text-sm font-bold text-gray-900 mb-1">
                 Detaily rezervace
               </h2>
-              <dl className="grid grid-cols-2 gap-2 text-xs">
+              <dl className="grid grid-cols-2 gap-1 text-xs leading-tight">
                 <div>
                   <dt className="text-gray-500">ID rezervace</dt>
                   <dd className="font-semibold text-gray-900 text-xs truncate">
@@ -266,14 +266,14 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
 
             {/* Platební údaje a QR kódy - kompaktní */}
             {(reservation.variableSymbol || reservation.depositAmount) && (
-              <div className="border-t border-b border-gray-200 py-3 mb-3">
-                <h2 className="text-sm font-bold text-gray-900 mb-2">
+              <div className="border-t border-b border-gray-200 py-2 mb-3">
+                <h2 className="text-sm font-bold text-gray-900 mb-1">
                   Platební údaje
                 </h2>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <h3 className="text-xs font-semibold text-gray-900 mb-1">Bankovní převod</h3>
-                    <dl className="space-y-1 text-xs">
+                    <dl className="space-y-0.5 text-xs leading-tight">
                       {reservation.variableSymbol && (
                         <div>
                           <dt className="text-gray-500">VS</dt>
@@ -322,8 +322,8 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                         <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        {/* PREZENTAČNÍ ÚPRAVA: Zmenšené QR kódy */}
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {/* PREZENTAČNÍ ÚPRAVA: Zmenšené QR kódy vedle sebe */}
                         {qrCodeDeposit && (
                           <div className="text-center">
                             <p className="text-xs text-gray-600 mb-1">Záloha</p>
