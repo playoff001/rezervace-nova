@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export default function AdminLayout() {
@@ -36,30 +36,46 @@ export default function AdminLayout() {
                 ← Hlavní stránka
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
+                <NavLink
                   to="/admin/dashboard"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                      isActive ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                    }`
+                  }
                 >
                   Dashboard
-                </Link>
-                <Link
+                </NavLink>
+                <NavLink
                   to="/admin/rezervace"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                      isActive ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                    }`
+                  }
                 >
                   Rezervace
-                </Link>
-                <Link
+                </NavLink>
+                <NavLink
                   to="/admin/pokoje"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                      isActive ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                    }`
+                  }
                 >
                   Pokoje
-                </Link>
-                <Link
+                </NavLink>
+                <NavLink
                   to="/admin/nastaveni"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                      isActive ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                    }`
+                  }
                 >
                   Nastavení
-                </Link>
+                </NavLink>
               </div>
             </div>
             <div className="flex items-center">

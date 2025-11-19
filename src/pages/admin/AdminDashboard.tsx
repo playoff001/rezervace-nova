@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const recentReservations = reservations
+  const recentReservations = [...reservations]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 

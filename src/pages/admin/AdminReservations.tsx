@@ -24,9 +24,13 @@ export default function AdminReservations() {
     }
   }
 
+  const sortedReservations = [...reservations].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   const filteredReservations = filter === 'all'
-    ? reservations
-    : reservations.filter(r => r.status === filter);
+    ? sortedReservations
+    : sortedReservations.filter(r => r.status === filter);
 
   if (loading) {
     return (
