@@ -41,21 +41,40 @@ export default function ReservationForm() {
     const handleFocus = (e: Event) => {
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-        // Počkej malou chvíli, aby se klávesnice otevřela
-        setTimeout(() => {
-          target.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'nearest'
-          });
-        }, 300);
+        // Použij requestAnimationFrame pro lepší synchronizaci s klávesnicí
+        requestAnimationFrame(() => {
+          // Počkej, až se klávesnice otevře (různé mobily mají různou rychlost)
+          setTimeout(() => {
+            // Pro mobilní zařízení použij lepší nastavení
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+              // Na mobilu scrolluj s větším offsetem a rychleji
+              const elementRect = target.getBoundingClientRect();
+              const absoluteElementTop = elementRect.top + window.pageYOffset;
+              const offset = 100; // Offset od vrchu viewportu
+              
+              window.scrollTo({
+                top: absoluteElementTop - offset,
+                behavior: 'smooth'
+              });
+            } else {
+              // Na desktopu použij klasický scrollIntoView
+              target.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start',
+                inline: 'nearest'
+              });
+            }
+          }, isMobile ? 500 : 100); // Na mobilu počkej déle
+        });
       }
     };
 
     // Přidej event listener na všechny inputy a textarey
-    const inputs = document.querySelectorAll('input, textarea');
+    const inputs = document.querySelectorAll('input, textarea, select');
     inputs.forEach(input => {
-      input.addEventListener('focus', handleFocus as EventListener);
+      input.addEventListener('focus', handleFocus as EventListener, { passive: true });
     });
 
     return () => {
@@ -374,9 +393,7 @@ export default function ReservationForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
                 onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
+                  // Globální handler se postará o scrollování
                 }}
               />
               {errors.guestName && (
@@ -399,9 +416,7 @@ export default function ReservationForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
                 onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
+                  // Globální handler se postará o scrollování
                 }}
               />
               {errors.guestPhone && (
@@ -424,9 +439,7 @@ export default function ReservationForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
                 onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
+                  // Globální handler se postará o scrollování
                 }}
               />
               {errors.guestEmail && (
@@ -451,9 +464,7 @@ export default function ReservationForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
                 onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
+                  // Globální handler se postará o scrollování
                 }}
               />
               {errors.numberOfGuests && (
@@ -476,9 +487,7 @@ export default function ReservationForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex-1 resize-none"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
                 onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
+                  // Globální handler se postará o scrollování
                 }}
               />
             </div>

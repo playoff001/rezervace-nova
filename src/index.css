@@ -16,6 +16,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Oprava pro mobilní klávesnici - zabraňuje překrývání inputů */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari */
+  body {
+    min-height: -webkit-fill-available;
+  }
+  
+  html {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Zajištění, že inputy budou viditelné při otevřené klávesnici */
+@media (max-width: 768px) {
+  /* Padding pro formuláře na mobilních zařízeních */
+  form {
+    padding-bottom: 20vh; /* Vytvoří prostor pro klávesnici */
+  }
+  
+  /* Zajištění, že inputy mají dostatek prostoru */
+  input, textarea, select {
+    font-size: 16px !important; /* Zabraňuje zoomování na iOS */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+}
+
 
 
 
