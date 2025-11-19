@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { reservationsAPI, adminAPI } from '../../api/api';
-import type { Reservation, PaymentMethod } from '../../types';
+import type { Reservation } from '../../types';
 import { formatDateDisplay } from '../../utils/dateUtils';
 
 export default function AdminReservationDetail() {
@@ -120,34 +120,6 @@ export default function AdminReservationDetail() {
     }
   }
 
-  async function handleUpdateStatus(status: Reservation['status']) {
-    if (!id) return;
-    
-    try {
-      setSaving(true);
-      await reservationsAPI.update(id, { status });
-      await loadReservation();
-    } catch (error) {
-      alert('Nepodařilo se aktualizovat stav rezervace.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleUpdatePayment(paymentMethod: PaymentMethod, paymentNote: string) {
-    if (!id) return;
-    
-    try {
-      setSaving(true);
-      await reservationsAPI.update(id, { paymentMethod, paymentNote });
-      await loadReservation();
-    } catch (error) {
-      alert('Nepodařilo se aktualizovat informace o platbě.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleSendSMS() {
     if (!id || !smsMessage.trim()) return;
     
@@ -180,6 +152,26 @@ export default function AdminReservationDetail() {
     );
   }
 
+  const formatWithPartOfDay = (date: string, type: 'arrival' | 'departure') => {
+    const base = formatDateDisplay(date);
+    const suffix = type === 'arrival' ? 'odpoledne' : 'dopoledne';
+    return `${base} ${suffix}`;
+  };
+
+  const getStatusLabel = (status: Reservation['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'Nová rezervace';
+      case 'confirmed':
+        return 'Potvrzeno';
+      case 'paid':
+        return 'Zaplaceno';
+      case 'cancelled':
+      default:
+        return 'Zrušeno';
+    }
+  };
+
   return (
     <div>
         <div className="mb-6">
@@ -203,19 +195,15 @@ export default function AdminReservationDetail() {
                   <dd className="mt-1 text-lg font-semibold text-gray-900">{reservation.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Pokoj</dt>
-                  <dd className="mt-1 text-lg text-gray-900">{reservation.roomName}</dd>
-                </div>
-                <div>
                   <dt className="text-sm font-medium text-gray-500">Příjezd</dt>
                   <dd className="mt-1 text-lg text-gray-900">
-                    {formatDateDisplay(reservation.checkIn)} (PM)
+                    {formatWithPartOfDay(reservation.checkIn, 'arrival')}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Odjezd</dt>
                   <dd className="mt-1 text-lg text-gray-900">
-                    {formatDateDisplay(reservation.checkOut)} (AM)
+                    {formatWithPartOfDay(reservation.checkOut, 'departure')}
                   </dd>
                 </div>
                 <div>
@@ -325,7 +313,7 @@ export default function AdminReservationDetail() {
                 <span
                   className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
                     reservation.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-blue-100 text-blue-800'
                       : reservation.status === 'confirmed'
                       ? 'bg-blue-100 text-blue-800'
                       : reservation.status === 'paid'
@@ -333,25 +321,10 @@ export default function AdminReservationDetail() {
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
-                  {reservation.status === 'pending'
-                    ? 'Čeká na potvrzení'
-                    : reservation.status === 'confirmed'
-                    ? 'Potvrzeno'
-                    : reservation.status === 'paid'
-                    ? 'Zaplaceno'
-                    : 'Zrušeno'}
+                  {getStatusLabel(reservation.status)}
                 </span>
               </div>
               <div className="space-y-2">
-                {reservation.status !== 'confirmed' && (
-                  <button
-                    onClick={() => handleUpdateStatus('confirmed')}
-                    disabled={saving}
-                    className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400"
-                  >
-                    Potvrdit
-                  </button>
-                )}
                 {reservation.depositAmount && (
                   <>
                     {!reservation.depositPaid && (
@@ -400,38 +373,6 @@ export default function AdminReservationDetail() {
                     Zrušit rezervaci
                   </button>
                 )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Platba</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Metoda platby
-                  </label>
-                  <select
-                    value={reservation.paymentMethod || ''}
-                    onChange={(e) => handleUpdatePayment(e.target.value as PaymentMethod, reservation.paymentNote || '')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">Vyberte metodu</option>
-                    <option value="transfer">Převod</option>
-                    <option value="qr">QR kód</option>
-                    <option value="cash">Hotově</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Poznámka k platbě
-                  </label>
-                  <textarea
-                    value={reservation.paymentNote || ''}
-                    onChange={(e) => handleUpdatePayment(reservation.paymentMethod || 'transfer', e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
               </div>
             </div>
 

@@ -65,6 +65,33 @@ export default function AdminReservations() {
     })}`;
   };
 
+  const getStatusLabel = (status: Reservation['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'Nová';
+      case 'confirmed':
+        return 'Potvrzeno';
+      case 'paid':
+        return 'Zaplaceno';
+      case 'cancelled':
+      default:
+        return 'Zrušeno';
+    }
+  };
+
+  const getStatusClasses = (status: Reservation['status']) => {
+    switch (status) {
+      case 'pending':
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-800';
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+      default:
+        return 'bg-red-100 text-red-800';
+    }
+  };
+
   return (
     <div>
         <div className="flex justify-between items-center mb-8">
@@ -91,7 +118,7 @@ export default function AdminReservations() {
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            Čeká na potvrzení
+            Nové
           </button>
           <button
             onClick={() => setFilter('confirmed')}
@@ -164,34 +191,34 @@ export default function AdminReservations() {
             <table className="w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Vytvořeno
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Termín
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Noci
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Cena
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Host
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Telefon
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     E-mail
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Stav
                   </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Akce
                   </th>
                 </tr>
@@ -212,53 +239,39 @@ export default function AdminReservations() {
                         : ''
                     }`}
                   >
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(reservation.createdAt)}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       {reservation.id.slice(0, 8)}...
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       <div>{new Date(reservation.checkIn).toLocaleDateString('cs-CZ')} (PM)</div>
                       <div>{new Date(reservation.checkOut).toLocaleDateString('cs-CZ')} (AM)</div>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {reservation.nights}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       {reservation.totalPrice} Kč
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {reservation.guestName}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {reservation.guestPhone}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500 truncate max-w-[150px]">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 truncate max-w-[180px]">
                       {reservation.guestEmail}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded-full ${
-                          reservation.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : reservation.status === 'confirmed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : reservation.status === 'paid'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
+                        className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${getStatusClasses(reservation.status)}`}
                       >
-                        {reservation.status === 'pending'
-                          ? 'Čeká'
-                          : reservation.status === 'confirmed'
-                          ? 'Potvrzeno'
-                          : reservation.status === 'paid'
-                          ? 'Zaplaceno'
-                          : 'Zrušeno'}
+                        {getStatusLabel(reservation.status)}
                       </span>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
                       <Link
                         to={`/admin/rezervace/${reservation.id}`}
                         className="text-blue-600 hover:text-blue-900"
