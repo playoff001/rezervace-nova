@@ -33,6 +33,18 @@
             window.location.replace('/');
             return;
           }
+
+          // Pokud je první část "admin", druhá "rezervace"/"reservace" a třetí část je UUID (starý admin detail rezervace), přesměruj na root
+          if (
+            firstPart === 'admin' &&
+            pathParts.length > 2 &&
+            (pathParts[1] === 'rezervace' || pathParts[1] === 'reservace') &&
+            uuidPattern.test(pathParts[2])
+          ) {
+            console.log('Old admin reservation URL detected, redirecting to root:', window.location.pathname);
+            window.location.replace('/');
+            return;
+          }
           
           // Pokud je první část "reservace" (starý název se "s"), přesměruj na root (kompatibilita se starými URL)
           if (firstPart === 'reservace') {
