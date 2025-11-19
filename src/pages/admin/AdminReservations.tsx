@@ -7,7 +7,8 @@ export default function AdminReservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  type SortMode = 'created-newest' | 'created-oldest' | 'checkin';
+  const [sortMode, setSortMode] = useState<SortMode>('created-newest');
 
   useEffect(() => {
     loadReservations();
@@ -26,9 +27,14 @@ export default function AdminReservations() {
   }
 
   const sortedReservations = [...reservations].sort((a, b) => {
+    if (sortMode === 'checkin') {
+      const aTime = new Date(a.checkIn).getTime();
+      const bTime = new Date(b.checkIn).getTime();
+      return aTime - bTime;
+    }
     const aTime = new Date(a.createdAt).getTime();
     const bTime = new Date(b.createdAt).getTime();
-    return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
+    return sortMode === 'created-newest' ? bTime - aTime : aTime - bTime;
   });
 
   const filteredReservations = filter === 'all'
@@ -102,26 +108,36 @@ export default function AdminReservations() {
           </button>
         </div>
 
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex gap-2 flex-wrap">
           <button
-            onClick={() => setSortOrder('newest')}
+            onClick={() => setSortMode('created-newest')}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              sortOrder === 'newest'
+              sortMode === 'created-newest'
                 ? 'bg-gray-900 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            Nejnovější rezervace
+            Nejnovější rezervace (dle vytvoření)
           </button>
           <button
-            onClick={() => setSortOrder('oldest')}
+            onClick={() => setSortMode('created-oldest')}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              sortOrder === 'oldest'
+              sortMode === 'created-oldest'
                 ? 'bg-gray-900 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            Nejstarší rezervace
+            Nejstarší rezervace (dle vytvoření)
+          </button>
+          <button
+            onClick={() => setSortMode('checkin')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              sortMode === 'checkin'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Podle termínu pobytu
           </button>
         </div>
 
@@ -167,8 +183,13 @@ export default function AdminReservations() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReservations.map((reservation) => (
-                  <tr key={reservation.id} className="hover:bg-gray-50">
+                {filteredReservations.map((reservation) => {
+                  const isPast = new Date(reservation.checkOut).getTime() < Date.now();
+                  return (
+                  <tr
+                    key={reservation.id}
+                    className={`hover:bg-gray-50 ${isPast ? 'bg-gray-100 text-gray-500' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(reservation.createdAt)}
                     </td>
@@ -227,7 +248,7 @@ export default function AdminReservations() {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                );})}
               </tbody>
             </table>
           </div>
