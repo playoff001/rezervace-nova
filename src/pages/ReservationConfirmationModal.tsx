@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { reservationsAPI } from '../api/api';
+import { reservationsAPI, adminAPI } from '../api/api';
 import type { Reservation } from '../types';
 import { formatDateDisplay } from '../utils/dateUtils';
 
@@ -16,12 +16,14 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
   const [qrCodeDeposit, setQrCodeDeposit] = useState<string | null>(null);
   const [qrCodeFull, setQrCodeFull] = useState<string | null>(null);
   const [loadingQR, setLoadingQR] = useState(false);
+  const [bankDetails, setBankDetails] = useState<{ accountNumber?: string; bankCode?: string }>({});
 
   useEffect(() => {
     // PREZENTAČNÍ ÚPRAVA: Načteme rezervaci pouze pokud není předána jako prop
     if (!initialReservation) {
       loadReservation();
     }
+    loadBankDetails();
   }, [reservationId, initialReservation]);
 
   useEffect(() => {
@@ -53,6 +55,26 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadBankDetails() {
+    try {
+      const response = await adminAPI.getConfig();
+      const accountNumber = response?.config?.guesthouse?.bankAccount?.accountNumber;
+      const bankCode = response?.config?.guesthouse?.bankAccount?.bankCode;
+      setBankDetails({
+        accountNumber: accountNumber || undefined,
+        bankCode: bankCode || undefined,
+      });
+    } catch (error) {
+      console.warn('Nepodařilo se načíst bankovní údaje z administrace.', error);
+    }
+  }
+
+  function formatDateWithPartOfDay(date: string, type: 'arrival' | 'departure') {
+    const base = formatDateDisplay(date);
+    const suffix = type === 'arrival' ? 'odpoledne' : 'dopoledne';
+    return `${base} ${suffix}`;
   }
 
   async function loadQRCodes() {
@@ -205,13 +227,13 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                   <dt className="text-gray-500">Pokoj</dt>
                   <dd className="text-gray-900">{reservation.roomName}</dd>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <dt className="text-gray-500">Příjezd</dt>
-                  <dd className="text-gray-900">{formatDateDisplay(reservation.checkIn)} (PM)</dd>
+                  <dd className="text-gray-900">{formatDateWithPartOfDay(reservation.checkIn, 'arrival')}</dd>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <dt className="text-gray-500">Odjezd</dt>
-                  <dd className="text-gray-900">{formatDateDisplay(reservation.checkOut)} (AM)</dd>
+                  <dd className="text-gray-900">{formatDateWithPartOfDay(reservation.checkOut, 'departure')}</dd>
                 </div>
                 <div>
                   <dt className="text-gray-500">Počet nocí</dt>
@@ -257,6 +279,22 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                           <dt className="text-gray-500">VS</dt>
                           <dd className="font-semibold text-gray-900">
                             {reservation.variableSymbol}
+                          </dd>
+                        </div>
+                      )}
+                      {bankDetails.accountNumber && (
+                        <div>
+                          <dt className="text-gray-500">Číslo účtu</dt>
+                          <dd className="font-semibold text-gray-900">
+                            {bankDetails.accountNumber}
+                          </dd>
+                        </div>
+                      )}
+                      {bankDetails.bankCode && (
+                        <div>
+                          <dt className="text-gray-500">Kód banky</dt>
+                          <dd className="font-semibold text-gray-900">
+                            {bankDetails.bankCode}
                           </dd>
                         </div>
                       )}
