@@ -41,13 +41,13 @@ export default function ReservationForm() {
     const handleFocus = (e: Event) => {
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        // Detekce mobilního zařízení - musí být před setTimeout
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
         // Použij requestAnimationFrame pro lepší synchronizaci s klávesnicí
         requestAnimationFrame(() => {
           // Počkej, až se klávesnice otevře (různé mobily mají různou rychlost)
           setTimeout(() => {
-            // Pro mobilní zařízení použij lepší nastavení
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
             if (isMobile) {
               // Na mobilu scrolluj s větším offsetem a rychleji
               const elementRect = target.getBoundingClientRect();
@@ -392,7 +392,7 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
-                onFocus={(e) => {
+                onFocus={() => {
                   // Globální handler se postará o scrollování
                 }}
               />
@@ -415,7 +415,7 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
-                onFocus={(e) => {
+                onFocus={() => {
                   // Globální handler se postará o scrollování
                 }}
               />
@@ -438,7 +438,7 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
-                onFocus={(e) => {
+                onFocus={() => {
                   // Globální handler se postará o scrollování
                 }}
               />
@@ -463,7 +463,7 @@ export default function ReservationForm() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
-                onFocus={(e) => {
+                onFocus={() => {
                   // Globální handler se postará o scrollování
                 }}
               />
@@ -486,7 +486,7 @@ export default function ReservationForm() {
                 rows={8}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex-1 resize-none"
                 style={{ fontSize: '14px', fontWeight: 'bold', color: '#000000' }}
-                onFocus={(e) => {
+                onFocus={() => {
                   // Globální handler se postará o scrollování
                 }}
               />
