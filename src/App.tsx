@@ -19,6 +19,7 @@ function App() {
   // Ověření a přesměrování ze starých URL formátů (jako záloha, pokud index.html nepomohl)
   useEffect(() => {
     const pathname = window.location.pathname;
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
     // Všechny staré URL formáty, které mají být přesměrovány na root
     const isOldFormat = 
@@ -27,7 +28,10 @@ function App() {
       // /admin/reservace/{UUID} - starý admin detail se "s"
       /^\/admin\/reservace\/[0-9a-f-]+$/i.test(pathname) ||
       // /rezervace/{UUID} pokud UUID vypadá jako rezervace ID (delší než room ID)
-      (/^\/rezervace\/[0-9a-f-]+$/i.test(pathname) && pathname.match(/\/rezervace\/([0-9a-f-]+)$/i)?.[1]?.length > 20);
+      (() => {
+        const match = pathname.match(/\/rezervace\/([0-9a-f-]+)$/i);
+        return /^\/rezervace\/[0-9a-f-]+$/i.test(pathname) && !!match && match[1].length > 20;
+      })();
     
     if (isOldFormat) {
       console.log('[App.tsx] Old URL format detected, redirecting to root:', pathname);
