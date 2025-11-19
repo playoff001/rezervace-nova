@@ -41,6 +41,13 @@ export default function AdminReservations() {
     ? sortedReservations
     : sortedReservations.filter(r => r.status === filter);
 
+  const now = Date.now();
+  const upcomingReservationIds = reservations
+    .filter(reservation => new Date(reservation.checkOut).getTime() >= now)
+    .sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime())
+    .slice(0, 2)
+    .map(r => r.id);
+
   if (loading) {
     return (
       <div className="text-center">
@@ -108,7 +115,7 @@ export default function AdminReservations() {
           </button>
         </div>
 
-        <div className="mb-6 flex gap-2 flex-wrap">
+        <div className="mb-4 flex gap-2 flex-wrap">
           <button
             onClick={() => setSortMode('created-newest')}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${
@@ -139,6 +146,16 @@ export default function AdminReservations() {
           >
             Podle termínu pobytu
           </button>
+        </div>
+        <div className="mb-6 flex gap-4 text-xs text-gray-500 items-center">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-4 h-4 rounded bg-rose-200 border border-rose-300"></span>
+            <span>Proběhlá rezervace</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-4 h-4 rounded bg-emerald-200 border border-emerald-300"></span>
+            <span>Nejbližší nadcházející rezervace (top 2)</span>
+          </div>
         </div>
 
         {/* Tabulka */}
@@ -183,25 +200,18 @@ export default function AdminReservations() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReservations.map((reservation, index) => {
-                  const now = Date.now();
+                {filteredReservations.map((reservation) => {
                   const checkOutTime = new Date(reservation.checkOut).getTime();
-                  const checkInTime = new Date(reservation.checkIn).getTime();
                   const isPast = checkOutTime < now;
-                  const daysUntil = Math.floor((checkInTime - now) / (1000 * 60 * 60 * 24));
-                  const isUpcoming =
-                    !isPast &&
-                    daysUntil >= 0 &&
-                    daysUntil <= 7 &&
-                    index < 2;
+                  const isUpcoming = upcomingReservationIds.includes(reservation.id);
                   return (
                   <tr
                     key={reservation.id}
                     className={`hover:bg-gray-50 ${
                       isPast
-                        ? 'bg-red-50 text-gray-500'
+                        ? 'bg-rose-100 border-l-4 border-rose-300 text-gray-600'
                         : isUpcoming
-                        ? 'bg-green-50'
+                        ? 'bg-emerald-100 border-l-4 border-emerald-300'
                         : ''
                     }`}
                   >
