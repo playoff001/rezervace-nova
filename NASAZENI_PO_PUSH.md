@@ -220,3 +220,4 @@ Pokud nic z toho nefunguje, řekni mi:
 3. Kde máš aplikaci na serveru? (`/var/www/rezervace-nova` nebo jiná cesta?)
 4. Jaký příkaz spouštíš na serveru? (`pm2 start` nebo jiný?)
 
+

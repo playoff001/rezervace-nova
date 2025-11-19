@@ -80,3 +80,4 @@ Po této úpravě:
 
 To zajistí, že všechny platformy budou mít konzistentní line endings!
 
+
