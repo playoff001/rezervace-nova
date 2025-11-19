@@ -46,11 +46,26 @@
             return;
           }
           
-          // Pokud je první část "reservace" (starý název se "s"), přesměruj na root (kompatibilita se starými URL)
-          if (firstPart === 'reservace') {
+          // Pokud je první část "reservace" (starý název se "s") a není to v admin, přesměruj na root (kompatibilita se starými URL)
+          if (firstPart === 'reservace' && pathParts[0] !== 'admin') {
             console.log('Old "reservace" path detected, redirecting to root:', window.location.pathname);
             window.location.replace('/');
             return;
+          }
+          
+          // Pokud je URL prázdná nebo root, zkontroluj localStorage a vymaž jakékoliv staré URL
+          if (pathParts.length === 0 || (pathParts.length === 1 && pathParts[0] === '')) {
+            // Vymaž localStorage, pokud obsahuje staré URL (pro jistotu)
+            try {
+              // Zkontroluj, jestli není uložená stará URL
+              const savedPath = sessionStorage.getItem('lastPath');
+              if (savedPath && savedPath.includes('/admin/reservace/')) {
+                sessionStorage.removeItem('lastPath');
+                console.log('Removed old admin/reservace URL from sessionStorage');
+              }
+            } catch (e) {
+              // Ignoruj chyby
+            }
           }
         }
       })();

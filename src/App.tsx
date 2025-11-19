@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
 import RoomSelection from './pages/RoomSelection';
 import ReservationForm from './pages/ReservationForm';
 import ReservationConfirmation from './pages/ReservationConfirmation';
@@ -13,8 +14,21 @@ import AdminLayout from './components/admin/AdminLayout';
 
 function App() {
   // Zjistíme base path z environment variable nebo z window.location
-  const basePath = import.meta.env.VITE_BASE_PATH || 
-    (window.location.pathname.split('/').filter(Boolean)[0] ? `/${window.location.pathname.split('/').filter(Boolean)[0]}` : '');
+  // V produkci by neměl být basePath (aplikace běží na root doméně)
+  const basePath = import.meta.env.VITE_BASE_PATH || '';
+  
+  // Ověření, že URL není starý formát s /admin/reservace/...
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    // Pokud je to stará admin/reservace URL, přesměruj na root
+    if (pathname.includes('/admin/reservace/') && pathname.match(/\/admin\/reservace\/[0-9a-f-]+$/i)) {
+      console.log('Detected old admin/reservace URL, redirecting to root:', pathname);
+      window.location.replace('/');
+      return;
+    }
+  }, []);
   
   return (
     <BrowserRouter basename={basePath}>
