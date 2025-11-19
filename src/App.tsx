@@ -59,7 +59,8 @@ function App() {
       <Routes>
         {/* Uživatelská část */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<RoomSelection />} />
+          <Route index element={<ReservationForm />} />
+          <Route path="pokoje" element={<RoomSelection />} />
           <Route path="reservace/:roomId" element={<ReservationForm />} />
           <Route path="potvrzeni/:reservationId" element={<ReservationConfirmation />} />
         </Route>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Calendar from '../components/Calendar';
 import { roomsAPI, reservationsAPI, calendarAPI } from '../api/api';
 import { validateReservation } from '../utils/reservationValidation';
@@ -10,6 +10,10 @@ import ReservationConfirmationModal from './ReservationConfirmationModal';
 
 export default function ReservationForm() {
   const { roomId } = useParams<{ roomId: string }>();
+  const location = useLocation();
+  const locationState = location.state as { roomId?: string } | null;
+  const stateRoomId = locationState?.roomId;
+  const effectiveRoomId = roomId || stateRoomId || null;
   const navigate = useNavigate();
   // PREZENTAČNÍ ÚPRAVA: navigate je potřeba pro přesměrování z neplatného roomId
   
@@ -86,30 +90,25 @@ export default function ReservationForm() {
 
   // PREZENTAČNÍ ÚPRAVA: Načteme první dostupný pokoj, pokud není roomId v URL nebo pokud roomId není platné ID pokoje
   useEffect(() => {
-    if (roomId) {
+    if (effectiveRoomId) {
       // Zkontroluj, jestli roomId je skutečně ID pokoje (ne UUID rezervace)
       // Pokud je to UUID, ale není to ID pokoje, přesměruj na root a načti první dostupný pokoj
-      loadDataOrFirstAvailable();
+      loadDataOrFirstAvailable(effectiveRoomId);
     } else {
       // Pokud není roomId, načteme první dostupný pokoj
       loadFirstAvailableRoom();
     }
-  }, [roomId, navigate]);
+  }, [effectiveRoomId, navigate]);
   
-  async function loadDataOrFirstAvailable() {
-    if (!roomId) {
-      loadFirstAvailableRoom();
-      return;
-    }
-    
+  async function loadDataOrFirstAvailable(requestedRoomId: string) {
     try {
       setLoading(true);
       // Zkus načíst pokoj s tímto ID
-      const roomRes = await roomsAPI.getById(roomId);
+      const roomRes = await roomsAPI.getById(requestedRoomId);
       
       // Pokud pokoj existuje, načti data
       if (roomRes.room) {
-        const calendarRes = await calendarAPI.getRoomCalendar(roomId);
+        const calendarRes = await calendarAPI.getRoomCalendar(requestedRoomId);
         setRoom(roomRes.room);
         setReservations(calendarRes.reservations || []);
         setBlocks(calendarRes.blocks || []);
@@ -121,7 +120,7 @@ export default function ReservationForm() {
       // Pokud se nepodařilo načíst pokoj (404 nebo jiná chyba), přesměruj na root a načti první dostupný
       console.log('Room not found, redirecting to root and loading first available room');
       // Přesměruj na root URL (bez roomId)
-      navigate('/', { replace: true });
+      navigate('/', { replace: true, state: null });
       loadFirstAvailableRoom();
     } finally {
       setLoading(false);
