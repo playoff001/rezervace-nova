@@ -13,20 +13,40 @@ import Layout from './components/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 
 function App() {
-  // Zjistíme base path z environment variable nebo z window.location
   // V produkci by neměl být basePath (aplikace běží na root doméně)
   const basePath = import.meta.env.VITE_BASE_PATH || '';
   
-  // Ověření, že URL není starý formát s /admin/reservace/...
+  // Ověření a přesměrování ze starých URL formátů (jako záloha, pokud index.html nepomohl)
   useEffect(() => {
     const pathname = window.location.pathname;
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
-    // Pokud je to stará admin/reservace URL, přesměruj na root
-    if (pathname.includes('/admin/reservace/') && pathname.match(/\/admin\/reservace\/[0-9a-f-]+$/i)) {
-      console.log('Detected old admin/reservace URL, redirecting to root:', pathname);
+    // Všechny staré URL formáty, které mají být přesměrovány na root
+    const isOldFormat = 
+      // /reservace/{UUID} - starý formát se "s"
+      /^\/reservace\/[0-9a-f-]+$/i.test(pathname) ||
+      // /admin/reservace/{UUID} - starý admin detail se "s"
+      /^\/admin\/reservace\/[0-9a-f-]+$/i.test(pathname) ||
+      // /rezervace/{UUID} pokud UUID vypadá jako rezervace ID (delší než room ID)
+      (/^\/rezervace\/[0-9a-f-]+$/i.test(pathname) && pathname.match(/\/rezervace\/([0-9a-f-]+)$/i)?.[1]?.length > 20);
+    
+    if (isOldFormat) {
+      console.log('[App.tsx] Old URL format detected, redirecting to root:', pathname);
       window.location.replace('/');
       return;
+    }
+    
+    // Kontrola podle částí cesty
+    const pathParts = pathname.split('/').filter(Boolean);
+    if (pathParts.length >= 2) {
+      // /reservace/{UUID} nebo /admin/reservace/{UUID}
+      if (
+        (pathParts[0] === 'reservace' && uuidPattern.test(pathParts[1])) ||
+        (pathParts[0] === 'admin' && pathParts[1] === 'reservace' && pathParts.length > 2 && uuidPattern.test(pathParts[2]))
+      ) {
+        console.log('[App.tsx] Old format with UUID detected, redirecting to root:', pathname);
+        window.location.replace('/');
+        return;
+      }
     }
   }, []);
   
