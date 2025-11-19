@@ -7,6 +7,7 @@ export default function AdminReservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
     loadReservations();
@@ -24,9 +25,11 @@ export default function AdminReservations() {
     }
   }
 
-  const sortedReservations = [...reservations].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const sortedReservations = [...reservations].sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+    return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
+  });
 
   const filteredReservations = filter === 'all'
     ? sortedReservations
@@ -41,6 +44,14 @@ export default function AdminReservations() {
     );
   }
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString('cs-CZ')} ${date.toLocaleTimeString('cs-CZ', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
+  };
+
   return (
     <div>
         <div className="flex justify-between items-center mb-8">
@@ -48,7 +59,7 @@ export default function AdminReservations() {
         </div>
 
         {/* Filtry */}
-        <div className="mb-6 flex gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg font-medium ${
@@ -91,12 +102,38 @@ export default function AdminReservations() {
           </button>
         </div>
 
+        <div className="mb-6 flex gap-2">
+          <button
+            onClick={() => setSortOrder('newest')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              sortOrder === 'newest'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Nejnovější rezervace
+          </button>
+          <button
+            onClick={() => setSortOrder('oldest')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              sortOrder === 'oldest'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Nejstarší rezervace
+          </button>
+        </div>
+
         {/* Tabulka */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vytvořeno
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
@@ -132,6 +169,9 @@ export default function AdminReservations() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredReservations.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDateTime(reservation.createdAt)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {reservation.id.slice(0, 8)}...
                     </td>
