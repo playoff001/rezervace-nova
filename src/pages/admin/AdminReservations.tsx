@@ -8,7 +8,7 @@ export default function AdminReservations() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   type SortMode = 'created-newest' | 'created-oldest' | 'checkin';
-  const [sortMode, setSortMode] = useState<SortMode>('created-newest');
+  const [sortMode, setSortMode] = useState<SortMode>('checkin');
 
   useEffect(() => {
     loadReservations();
