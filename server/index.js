@@ -20,7 +20,7 @@ const DATA_DIR = join(__dirname, 'data');
 // CORS - v produkci povolíme jen konkrétní domény
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000', 'https://aplikace.eu', 'http://aplikace.eu', 'https://bestwebs.fun', 'http://bestwebs.fun'];
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -33,16 +33,6 @@ app.use(cors({
   },
   credentials: true
 }));
-
-// Middleware pro podporu iframe - povolíme zobrazení v iframe
-app.use((req, res, next) => {
-  // Odstraníme X-Frame-Options, pokud existuje (aby iframe fungoval)
-  res.removeHeader('X-Frame-Options');
-  // Nastavíme Content-Security-Policy pro povolení iframe
-  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://bestwebs.fun http://bestwebs.fun https://aplikace.eu http://aplikace.eu;");
-  next();
-});
-
 app.use(express.json());
 
 // Zajištění existence data složky
@@ -127,12 +117,9 @@ function getDefaultData(filename) {
           country: 'Česká republika',
         },
         bankAccount: {
-          accountNumber: '', // číslo účtu s předčíslím (např. 000000-6450062003/5500) - pro informaci
-          bankCode: '', // kód banky (např. 5500) - pro informaci
-          iban: '', // IBAN (např. CZ9555000000006450062003) - pro QR kód
-          bic: '', // BIC/SWIFT kód (např. RZBCCZPP) - pro QR kód
+          accountNumber: '',
+          bankCode: '',
         },
-        depositPercentage: 50, // Výchozí 50% záloha
       },
       counters: {
         variableSymbol: {}, // { "2025": 1, "2026": 1, ... }
@@ -192,62 +179,25 @@ async function generateInvoiceNumber() {
 }
 
 // Generování QR kódu pro SPD platbu
-// Podle standardu SPD a dokumentace Toret QR platby
-async function generateQRCodeSPD(iban, bic, amount, variableSymbol, message = '') {
-  // Formát SPD: SPD*1.0*ACC:IBAN*AM:480.50*CC:CZK*MSG:PLATBA ZA ZBOZI*X-VS:1234567890*BIC:BICCODE
-  // IBAN a BIC jsou povinné pro správné fungování QR kódu v bankovních aplikacích
-  
-  if (!iban) {
-    console.error('IBAN je povinný pro generování QR kódu');
-    return null;
-  }
-  
-  if (!bic) {
-    console.error('BIC/SWIFT je povinný pro generování QR kódu');
-    return null;
-  }
-  
-  // Odstraníme pomlčky a mezery z VS pro QR kód
-  const vsClean = variableSymbol ? variableSymbol.replace(/[-\s]/g, '') : '';
-  
-  // Formát částky - musí být s desetinnou tečkou
-  const amountFormatted = parseFloat(amount).toFixed(2);
-  
-  // IBAN a BIC musí být bez mezer a velkými písmeny
-  const ibanClean = iban.replace(/\s/g, '').toUpperCase();
-  const bicClean = bic.replace(/\s/g, '').toUpperCase();
-  
-  // Základní SPD formát
-  let spdString = `SPD*1.0*ACC:${ibanClean}*AM:${amountFormatted}*CC:CZK`;
-  
-  // Přidáme BIC/SWIFT (podle dokumentace Toret je to nutné)
-  spdString += `*BIC:${bicClean}`;
-  
+async function generateQRCodeSPD(accountNumber, amount, variableSymbol, message = '') {
+  // Formát SPD: SPD*1.0*ACC:CZ6508000000192000145399*AM:480.50*CC:CZK*MSG:PLATBA ZA ZBOZI*X-VS:1234567890
+  // Odstraníme pomlčky z VS pro QR kód
+  const vsClean = variableSymbol.replace(/-/g, '');
+  let spdString = `SPD*1.0*ACC:${accountNumber}*AM:${amount.toFixed(2)}*CC:CZK`;
   if (message) {
-    // Omezíme délku zprávy na 60 znaků, odstraníme diakritiku a speciální znaky
-    // Odstraníme diakritiku pomocí normalizace
-    let msg = message.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    // Odstraníme speciální znaky, ponecháme jen písmena, čísla a mezery
-    msg = msg.replace(/[^\w\s]/g, '').replace(/\*/g, '');
-    // Omezíme délku
-    msg = msg.substring(0, 60).trim();
-    if (msg) {
-      spdString += `*MSG:${msg}`;
-    }
+    // Omezíme délku zprávy na 60 znaků
+    const msg = message.substring(0, 60).replace(/\*/g, '');
+    spdString += `*MSG:${msg}`;
   }
-  
   if (vsClean) {
     spdString += `*X-VS:${vsClean}`;
   }
   
-  console.log('Generování QR kódu SPD:', spdString);
-  
   try {
     const qrCodeDataURL = await QRCode.toDataURL(spdString, {
-      errorCorrectionLevel: 'H', // Vyšší error correction pro lepší čitelnost
+      errorCorrectionLevel: 'M',
       type: 'image/png',
-      width: 300, // Původní velikost
-      margin: 2, // Okraje kolem QR kódu
+      width: 300,
     });
     return qrCodeDataURL;
   } catch (error) {
@@ -393,49 +343,6 @@ app.get('/api/reservations', async (req, res) => {
   }
 });
 
-// Smazání všech rezervací - MUSÍ být před routami s :id
-app.post('/api/reservations/delete-all', async (req, res) => {
-  try {
-    console.log('DELETE ALL RESERVATIONS - Request received');
-    const { password } = req.body;
-    
-    if (!password) {
-      console.log('DELETE ALL RESERVATIONS - Password missing');
-      return res.status(400).json({ error: 'Heslo je povinné' });
-    }
-    
-    // Ověření hesla
-    const adminData = await loadData('admin.json');
-    if (!adminData.admin) {
-      console.log('DELETE ALL RESERVATIONS - Admin account not found');
-      return res.status(500).json({ error: 'Admin účet není nastaven' });
-    }
-    
-    const isValid = await bcrypt.compare(password, adminData.admin.passwordHash);
-    if (!isValid) {
-      console.log('DELETE ALL RESERVATIONS - Invalid password');
-      return res.status(401).json({ error: 'Neplatné heslo' });
-    }
-    
-    // Smazání všech rezervací
-    const data = await loadData('reservations.json');
-    const deletedCount = data.reservations ? data.reservations.length : 0;
-    data.reservations = [];
-    await saveData('reservations.json', data);
-    
-    console.log(`DELETE ALL RESERVATIONS - Successfully deleted ${deletedCount} reservations`);
-    const text = deletedCount === 1 ? 'rezervace' : deletedCount < 5 ? 'rezervace' : 'rezervací';
-    res.json({ 
-      success: true, 
-      message: `Smazáno ${deletedCount} ${text}`,
-      deletedCount 
-    });
-  } catch (error) {
-    console.error('DELETE ALL RESERVATIONS - Error:', error);
-    res.status(500).json({ error: error.message || 'Nepodařilo se smazat rezervace' });
-  }
-});
-
 app.get('/api/reservations/:id', async (req, res) => {
   try {
     const data = await loadData('reservations.json');
@@ -462,11 +369,7 @@ app.post('/api/reservations', async (req, res) => {
     // Generování variabilního symbolu a čísla faktury
     const variableSymbol = await generateVariableSymbol();
     const invoiceNumber = await generateInvoiceNumber();
-    
-    // Načtení procenta zálohy z konfigurace (výchozí 50%)
-    const config = await loadData('config.json');
-    const depositPercentage = config.guesthouse?.depositPercentage || 50;
-    const depositAmount = Math.round(req.body.totalPrice * (depositPercentage / 100));
+    const depositAmount = Math.round(req.body.totalPrice * 0.5); // 50% záloha
 
     console.log('Vytváření rezervace s platebními údaji:', {
       variableSymbol,
@@ -494,10 +397,8 @@ app.post('/api/reservations', async (req, res) => {
     
     console.log('Rezervace vytvořena:', newReservation.id, 'VS:', variableSymbol, 'Faktura:', invoiceNumber);
     
-    // Odeslání e-mailu a SMS (pokud je nakonfigurováno) - asynchronně v pozadí, aby neblokovalo odpověď
-    sendReservationNotifications(newReservation).catch(err => {
-      console.error('Chyba při odesílání notifikací (rezervace byla vytvořena):', err);
-    });
+    // Odeslání e-mailu a SMS (pokud je nakonfigurováno)
+    await sendReservationNotifications(newReservation);
     
     res.json({ reservation: newReservation });
   } catch (error) {
@@ -751,11 +652,10 @@ app.get('/api/reservations/:id/qrcode', async (req, res) => {
     }
     
     const config = await loadData('config.json');
-    const iban = config.guesthouse?.bankAccount?.iban;
-    const bic = config.guesthouse?.bankAccount?.bic;
+    const accountNumber = config.guesthouse?.bankAccount?.accountNumber;
     
-    if (!iban || !bic) {
-      return res.status(400).json({ error: 'IBAN nebo BIC/SWIFT není nastaveno' });
+    if (!accountNumber) {
+      return res.status(400).json({ error: 'Číslo účtu není nastaveno' });
     }
     
     // Pro zálohu nebo celkovou částku
@@ -764,8 +664,7 @@ app.get('/api/reservations/:id/qrcode', async (req, res) => {
       : reservation.totalPrice;
     
     const qrCode = await generateQRCodeSPD(
-      iban,
-      bic,
+      accountNumber,
       amount,
       reservation.variableSymbol || '',
       `Rezervace ${reservation.id}`
@@ -966,13 +865,10 @@ async function generateInvoicePDF(reservation, guesthouse) {
     
     // Záloha a doplatek
     if (reservation.depositAmount) {
-      // Vypočítáme procento zálohy (zaokrouhlíme na celé číslo)
-      const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
-      const finalPaymentPercent = 100 - depositPercent;
       doc.fontSize(10);
-      doc.text(`Záloha (${depositPercent}%): ${reservation.depositAmount} Kč`, 20, y);
+      doc.text(`Záloha (50%): ${reservation.depositAmount} Kč`, 20, y);
       y += 15;
-      doc.text(`Doplatek (${finalPaymentPercent}%): ${reservation.totalPrice - reservation.depositAmount} Kč`, 20, y);
+      doc.text(`Doplatek (50%): ${reservation.totalPrice - reservation.depositAmount} Kč`, 20, y);
       y += 25;
     }
     
@@ -982,14 +878,6 @@ async function generateInvoicePDF(reservation, guesthouse) {
     y += 15;
     if (guesthouse.bankAccount && guesthouse.bankAccount.accountNumber) {
       doc.text(`Číslo účtu: ${guesthouse.bankAccount.accountNumber}`, 20, y);
-      y += 15;
-    }
-    if (guesthouse.bankAccount && guesthouse.bankAccount.iban) {
-      doc.text(`IBAN: ${guesthouse.bankAccount.iban}`, 20, y);
-      y += 15;
-    }
-    if (guesthouse.bankAccount && guesthouse.bankAccount.bic) {
-      doc.text(`BIC/SWIFT: ${guesthouse.bankAccount.bic}`, 20, y);
       y += 15;
     }
     doc.text(`Variabilní symbol: ${reservation.variableSymbol || 'N/A'}`, 20, y);
@@ -1040,9 +928,6 @@ async function sendReservationEmail(reservation) {
         user: emailConfig.user,
         pass: emailConfig.password,
       },
-      connectionTimeout: 60000, // 60 sekund pro navázání spojení
-      socketTimeout: 60000, // 60 sekund pro socket timeout
-      greetingTimeout: 30000, // 30 sekund pro greeting timeout
     });
     
     // Generování QR kódu pro zálohu
@@ -1050,54 +935,25 @@ async function sendReservationEmail(reservation) {
     let qrCodeDeposit = null;
     let qrCodeFull = null;
     
-    if (guesthouse?.bankAccount?.iban && guesthouse?.bankAccount?.bic && reservation.variableSymbol) {
+    if (guesthouse?.bankAccount?.accountNumber && reservation.variableSymbol) {
       if (reservation.depositAmount) {
         qrCodeDeposit = await generateQRCodeSPD(
-          guesthouse.bankAccount.iban,
-          guesthouse.bankAccount.bic,
+          guesthouse.bankAccount.accountNumber,
           reservation.depositAmount,
           reservation.variableSymbol,
           `Zaloha rezervace ${reservation.id}`
         );
       }
       qrCodeFull = await generateQRCodeSPD(
-        guesthouse.bankAccount.iban,
-        guesthouse.bankAccount.bic,
+        guesthouse.bankAccount.accountNumber,
         reservation.totalPrice,
         reservation.variableSymbol,
         `Rezervace ${reservation.id}`
       );
     }
     
-    // Generování PDF faktury jako přílohy
-    let pdfAttachment = null;
-    try {
-      const pdfBuffer = await generateInvoicePDF(reservation, guesthouse);
-      pdfAttachment = {
-        filename: `faktura-${reservation.invoiceNumber || reservation.id}.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf',
-      };
-      console.log('PDF faktura vygenerována pro email');
-    } catch (error) {
-      console.error('Chyba při generování PDF faktury pro email:', error);
-      // Pokračujeme i bez PDF - email se pošle bez přílohy
-    }
-    
-    // Formátování pole "from" - pokud je vyplněné jméno, zkombinujeme ho s emailem
-    let fromAddress = emailConfig.user;
-    if (emailConfig.from && emailConfig.from.trim()) {
-      // Pokud from obsahuje <, je to už ve správném formátu "Jméno <email>"
-      if (emailConfig.from.includes('<')) {
-        fromAddress = emailConfig.from;
-      } else {
-        // Jinak zkombinujeme jméno s emailem
-        fromAddress = `${emailConfig.from} <${emailConfig.user}>`;
-      }
-    }
-    
     const mailOptions = {
-      from: fromAddress,
+      from: emailConfig.from || emailConfig.user,
       to: reservation.guestEmail,
       subject: `Potvrzení rezervace #${reservation.id}`,
       html: `
@@ -1117,15 +973,9 @@ async function sendReservationEmail(reservation) {
         
         <h3>Platební údaje:</h3>
         ${guesthouse?.bankAccount?.accountNumber ? `<p><strong>Číslo účtu:</strong> ${guesthouse.bankAccount.accountNumber}</p>` : ''}
-        ${guesthouse?.bankAccount?.iban ? `<p><strong>IBAN:</strong> ${guesthouse.bankAccount.iban}</p>` : ''}
-        ${guesthouse?.bankAccount?.bic ? `<p><strong>BIC/SWIFT:</strong> ${guesthouse.bankAccount.bic}</p>` : ''}
         ${reservation.variableSymbol ? `<p><strong>Variabilní symbol:</strong> ${reservation.variableSymbol}</p>` : ''}
-        ${reservation.depositAmount ? (() => {
-          const depositPercent = Math.round((reservation.depositAmount / reservation.totalPrice) * 100);
-          const finalPaymentPercent = 100 - depositPercent;
-          return `<p><strong>Záloha (${depositPercent}%):</strong> ${reservation.depositAmount} Kč</p>
-        <p><strong>Doplatek (${finalPaymentPercent}%):</strong> ${reservation.totalPrice - reservation.depositAmount} Kč</p>`;
-        })() : ''}
+        ${reservation.depositAmount ? `<p><strong>Záloha (50%):</strong> ${reservation.depositAmount} Kč</p>` : ''}
+        ${reservation.depositAmount ? `<p><strong>Doplatek (50%):</strong> ${reservation.totalPrice - reservation.depositAmount} Kč</p>` : ''}
         
         ${qrCodeDeposit ? `
           <h4>QR kód pro platbu zálohy:</h4>
@@ -1137,11 +987,8 @@ async function sendReservationEmail(reservation) {
           <img src="${qrCodeFull}" alt="QR kód pro celou částku" style="max-width: 300px;" />
         ` : ''}
         
-        ${pdfAttachment ? `<p><strong>Faktura je přiložena k tomuto e-mailu.</strong></p>` : ''}
-        
         <p>Brzy se na vás těšíme!</p>
       `,
-      attachments: pdfAttachment ? [pdfAttachment] : [],
     };
     
     await transporter.sendMail(mailOptions);

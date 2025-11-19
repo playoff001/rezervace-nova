@@ -21,7 +21,7 @@ export default function RoomSelection() {
       // Ověříme, že roomId existuje a není prázdný
       if (roomId && typeof roomId === 'string') {
         // Použijeme relativní cestu bez úvodního lomítka, aby fungovala s basename
-        const targetPath = `rezervace/${roomId}`;
+        const targetPath = `reservace/${roomId}`;
         console.log('Navigating to:', targetPath, 'roomId:', roomId);
         navigate(targetPath, { replace: true });
       }
@@ -110,7 +110,7 @@ export default function RoomSelection() {
                   </div>
                 </div>
                 <Link
-                  to={`/rezervace/${room.id}`}
+                  to={`/reservace/${room.id}`}
                   className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
                   Rezervovat

@@ -1,31 +1,6 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { Outlet, Link } from 'react-router-dom';
 
 export default function Layout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL na root (pokud UUID není v /rezervace/ nebo /potvrzeni/) - fix UUID redirect
-  useEffect(() => {
-    // Zkontroluj, jestli je v URL UUID jako první část (ne v /rezervace/ nebo /potvrzeni/)
-    const pathParts = location.pathname.split('/').filter(Boolean);
-    
-    if (pathParts.length > 0) {
-      const firstPart = pathParts[0];
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      
-      // Pokud je první část UUID a není to admin, rezervace nebo potvrzeni, přesměruj na root
-      if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'rezervace' && firstPart !== 'potvrzeni') {
-        console.log('UUID detected as first path part, redirecting to root:', location.pathname);
-        // Změň URL v prohlížeči bez reloadu
-        window.history.replaceState(null, '', '/');
-        // Přesměruj pomocí React Router
-        navigate('/', { replace: true });
-        return;
-      }
-    }
-  }, [location.pathname, navigate]);
-  
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* PREZENTAČNÍ ÚPRAVA: Horní lišta je skrytá pro minimalizaci výšky (pro iframe) */}
@@ -52,12 +27,12 @@ export default function Layout() {
       {/* Pro návrat k původnímu stavu: odstranit tento Link */}
       <Link
         to="/admin"
-        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors"
+        className="fixed top-4 right-4 z-50 p-2 text-gray-400 hover:text-gray-600 transition-colors"
         title="Administrace"
       >
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-4 w-4 sm:h-5 sm:w-5" 
+          className="h-5 w-5" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"

@@ -1,0 +1,127 @@
+═══════════════════════════════════════════════════════════════
+  DEFINITIVNÍ OPRAVA SSL PRO IPv6 - RYCHLÝ NÁVOD
+═══════════════════════════════════════════════════════════════
+
+PROBLÉM:
+- IPv4 funguje OK (Let's Encrypt certifikát)
+- IPv6 používá self-signed certifikát → varování o nebezpečí
+- Polovina uživatelů dostává varování
+
+ŘEŠENÍ:
+Spusť tyto příkazy na serveru (zkopíruj a vlož celý blok najednou):
+
+═══════════════════════════════════════════════════════════════
+  KROK 1: Připoj se na server
+═══════════════════════════════════════════════════════════════
+
+ssh root@aplikace.eu
+# Heslo: tnpKksN4TkkA
+
+═══════════════════════════════════════════════════════════════
+  KROK 2: Zkopíruj a spusť tento celý blok příkazů
+═══════════════════════════════════════════════════════════════
+
+DOMAIN="aplikace.eu"
+CONFIG_FILE=$(grep -l "$DOMAIN" /etc/nginx/sites-enabled/* 2>/dev/null | head -1)
+[ -z "$CONFIG_FILE" ] && CONFIG_FILE="/etc/nginx/sites-enabled/default"
+
+echo "=== ZÁLOHA ==="
+cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+echo "✅ Záloha vytvořena"
+
+echo ""
+echo "=== VYTVOŘENÍ CERTIFIKÁTU ==="
+if ! command -v certbot &> /dev/null; then
+    apt update && apt install -y certbot python3-certbot-nginx
+fi
+
+certbot --nginx -d aplikace.eu -d www.aplikace.eu \
+    --non-interactive \
+    --agree-tos \
+    --email admin@aplikace.eu \
+    --redirect \
+    --force-renewal
+
+CERT_PATH="/etc/letsencrypt/live/aplikace.eu/fullchain.pem"
+if [ ! -f "$CERT_PATH" ]; then
+    echo "❌ Certifikát nebyl vytvořen!"
+    exit 1
+fi
+echo "✅ Certifikát vytvořen: $CERT_PATH"
+
+echo ""
+echo "=== ÚPRAVA NGINX KONFIGURACE ==="
+echo "Konfigurační soubor: $CONFIG_FILE"
+
+# Zkontroluj, zda má IPv6 správný certifikát
+if grep -q "listen \[::\]:443" "$CONFIG_FILE"; then
+    echo "✅ IPv6 listen nalezen"
+    # Ověř certifikát
+    if ! grep -A 5 "listen \[::\]:443" "$CONFIG_FILE" | grep -q "ssl_certificate.*aplikace.eu"; then
+        echo "⚠️ IPv6 nemá správný certifikát - upravuji..."
+        # Uprav konfiguraci - přidej certifikát pro IPv6
+        sed -i '/listen \[::\]:443 ssl http2;/a\    ssl_certificate /etc/letsencrypt/live/aplikace.eu/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/aplikace.eu/privkey.pem;' "$CONFIG_FILE"
+    fi
+else
+    echo "⚠️ IPv6 listen chybí - přidávám..."
+    sed -i '/listen 443 ssl http2;/a\    listen [::]:443 ssl http2;' "$CONFIG_FILE"
+fi
+
+echo ""
+echo "=== TEST A RESTART ==="
+if nginx -t; then
+    systemctl restart nginx
+    echo "✅ Nginx restartován"
+else
+    echo "❌ Chyba v konfiguraci!"
+    exit 1
+fi
+
+echo ""
+echo "=== OVĚŘENÍ ==="
+echo "IPv4 certifikát:"
+echo | openssl s_client -connect aplikace.eu:443 -servername aplikace.eu 2>/dev/null | openssl x509 -noout -subject -issuer 2>/dev/null | head -2
+echo ""
+echo "IPv6 certifikát:"
+echo | openssl s_client -connect [2a00:4b40:aaaa:2011:0:0:0:6]:443 -servername aplikace.eu 2>/dev/null | openssl x509 -noout -subject -issuer 2>/dev/null | head -2
+
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "  ✅ HOTOVO!"
+echo "═══════════════════════════════════════════════════════════════"
+echo ""
+echo "📋 Další kroky:"
+echo "1. Počkej 5-10 minut (DNS cache)"
+echo "2. Otestuj: https://www.ssllabs.com/ssltest/analyze.html?d=aplikace.eu"
+echo "3. Očekávaný výsledek: Grade A pro IPv4 i IPv6"
+echo ""
+
+═══════════════════════════════════════════════════════════════
+  CO DĚLAT, KDYŽ TO NEFUNGUJE?
+═══════════════════════════════════════════════════════════════
+
+Pokud máš problém, spusť tento diagnostický příkaz:
+
+cat "$CONFIG_FILE" | grep -A 10 "listen \[::\]:443"
+
+Mělo by ukázat něco jako:
+
+    listen [::]:443 ssl http2;
+    ssl_certificate /etc/letsencrypt/live/aplikace.eu/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aplikace.eu/privkey.pem;
+
+Pokud tam není "ssl_certificate", pak IPv6 používá špatný certifikát!
+
+RUČNÍ OPRAVA:
+1. Otevři konfiguraci: nano "$CONFIG_FILE"
+2. Najdi řádek s "listen [::]:443 ssl http2;"
+3. Hned pod něj přidej:
+   ssl_certificate /etc/letsencrypt/live/aplikace.eu/fullchain.pem;
+   ssl_certificate_key /etc/letsencrypt/live/aplikace.eu/privkey.pem;
+4. Ulož: Ctrl+O, Enter, Ctrl+X
+5. Test: nginx -t
+6. Restart: systemctl restart nginx
+
+═══════════════════════════════════════════════════════════════
+
+

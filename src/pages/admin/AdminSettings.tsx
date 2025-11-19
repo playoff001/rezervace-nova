@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { adminAPI, reservationsAPI } from '../../api/api';
+import { adminAPI } from '../../api/api';
 import type { GuesthouseSettings, EmailConfig, SMSConfig } from '../../types';
 
 export default function AdminSettings() {
@@ -18,10 +18,7 @@ export default function AdminSettings() {
     bankAccount: {
       accountNumber: '',
       bankCode: '',
-      iban: '',
-      bic: '',
     },
-    depositPercentage: 50,
   });
   const [email, setEmail] = useState<EmailConfig>({
     host: '',
@@ -36,9 +33,6 @@ export default function AdminSettings() {
     apiUrl: '',
     sender: '',
   });
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -62,10 +56,7 @@ export default function AdminSettings() {
           bankAccount: {
             accountNumber: response.config.guesthouse.bankAccount?.accountNumber || '',
             bankCode: response.config.guesthouse.bankAccount?.bankCode || '',
-            iban: response.config.guesthouse.bankAccount?.iban || '',
-            bic: response.config.guesthouse.bankAccount?.bic || '',
           },
-          depositPercentage: response.config.guesthouse.depositPercentage || 50,
         });
       }
       if (response.config?.email) {
@@ -105,10 +96,6 @@ export default function AdminSettings() {
         guesthouse: {
           ...currentConfig.guesthouse,
           ...guesthouse,
-          bankAccount: {
-            ...currentConfig.guesthouse?.bankAccount,
-            ...guesthouse.bankAccount,
-          },
         },
         email: {
           ...currentConfig.email,
@@ -128,30 +115,6 @@ export default function AdminSettings() {
       alert('Nepodařilo se uložit nastavení');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleDeleteAllReservations() {
-    if (!deletePassword) {
-      alert('Zadejte prosím heslo');
-      return;
-    }
-
-    try {
-      setDeleting(true);
-      console.log('Attempting to delete all reservations...');
-      const response = await reservationsAPI.deleteAll(deletePassword);
-      console.log('Delete response:', response);
-      const count = response.deletedCount;
-      const text = count === 1 ? 'rezervace' : count < 5 ? 'rezervace' : 'rezervací';
-      alert(`Úspěšně smazáno ${count} ${text}`);
-      setShowDeleteConfirm(false);
-      setDeletePassword('');
-    } catch (error: any) {
-      console.error('Error deleting reservations:', error);
-      alert(error.message || 'Nepodařilo se smazat rezervace. Zkontroluj konzoli prohlížeče (F12) pro více informací.');
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -278,127 +241,42 @@ export default function AdminSettings() {
           {/* Bankovní účet */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bankovní účet
+              Bankovní účet *
             </label>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Číslo účtu s předčíslím (pro informaci)
-                </label>
-                <input
-                  type="text"
-                  value={guesthouse.bankAccount.accountNumber}
-                  onChange={(e) =>
-                    setGuesthouse({
-                      ...guesthouse,
-                      bankAccount: {
-                        ...guesthouse.bankAccount,
-                        accountNumber: e.target.value,
-                      },
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Např. 000000-6450062003/5500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Pro zobrazení zákazníkům, kteří nechtějí platit QR kódem
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Kód banky (pro informaci)
-                </label>
-                <input
-                  type="text"
-                  value={guesthouse.bankAccount.bankCode || ''}
-                  onChange={(e) =>
-                    setGuesthouse({
-                      ...guesthouse,
-                      bankAccount: {
-                        ...guesthouse.bankAccount,
-                        bankCode: e.target.value,
-                      },
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Např. 5500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  IBAN * (pro QR kód)
-                </label>
-                <input
-                  type="text"
-                  value={guesthouse.bankAccount.iban || ''}
-                  onChange={(e) =>
-                    setGuesthouse({
-                      ...guesthouse,
-                      bankAccount: {
-                        ...guesthouse.bankAccount,
-                        iban: e.target.value.toUpperCase().replace(/\s/g, ''),
-                      },
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Např. CZ9555000000006450062003"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Povinné pro generování QR kódů
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  BIC/SWIFT * (pro QR kód)
-                </label>
-                <input
-                  type="text"
-                  value={guesthouse.bankAccount.bic || ''}
-                  onChange={(e) =>
-                    setGuesthouse({
-                      ...guesthouse,
-                      bankAccount: {
-                        ...guesthouse.bankAccount,
-                        bic: e.target.value.toUpperCase().replace(/\s/g, ''),
-                      },
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Např. RZBCCZPP"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Povinné pro generování QR kódů
-                </p>
-              </div>
+              <input
+                type="text"
+                value={guesthouse.bankAccount.accountNumber}
+                onChange={(e) =>
+                  setGuesthouse({
+                    ...guesthouse,
+                    bankAccount: {
+                      ...guesthouse.bankAccount,
+                      accountNumber: e.target.value,
+                    },
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Číslo účtu (např. CZ6508000000192000145399 nebo 19-2000145399/0800)"
+              />
+              <input
+                type="text"
+                value={guesthouse.bankAccount.bankCode || ''}
+                onChange={(e) =>
+                  setGuesthouse({
+                    ...guesthouse,
+                    bankAccount: {
+                      ...guesthouse.bankAccount,
+                      bankCode: e.target.value,
+                    },
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Kód banky (volitelné, pokud není v čísle účtu)"
+              />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              * IBAN a BIC/SWIFT jsou nutné pro generování QR kódů. Číslo účtu a kód banky slouží pouze pro informaci zákazníkům.
-            </p>
-          </div>
-
-          {/* Výška zálohy */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Výška zálohy *
-            </label>
-            <select
-              value={guesthouse.depositPercentage || 50}
-              onChange={(e) =>
-                setGuesthouse({
-                  ...guesthouse,
-                  depositPercentage: parseInt(e.target.value, 10),
-                })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value={20}>20% záloha / 80% doplatek</option>
-              <option value={30}>30% záloha / 70% doplatek</option>
-              <option value={40}>40% záloha / 60% doplatek</option>
-              <option value={50}>50% záloha / 50% doplatek</option>
-              <option value={60}>60% záloha / 40% doplatek</option>
-            </select>
-            <p className="mt-2 text-sm text-gray-500">
-              * Toto nastavení se použije pro všechny nové rezervace
+              * Číslo účtu je nutné pro generování QR kódů a faktur
             </p>
           </div>
 
@@ -406,7 +284,7 @@ export default function AdminSettings() {
           <div className="flex justify-end pt-4 border-t border-gray-200">
             <button
               onClick={handleSave}
-              disabled={saving || !guesthouse.name || !guesthouse.ico || !guesthouse.bankAccount.iban || !guesthouse.bankAccount.bic}
+              disabled={saving || !guesthouse.name || !guesthouse.ico || !guesthouse.bankAccount.accountNumber}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Ukládání...' : 'Uložit nastavení'}
@@ -569,58 +447,6 @@ export default function AdminSettings() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Smazání všech rezervací - Nebezpečná zóna */}
-      <div className="bg-white rounded-lg shadow p-6 border-2 border-red-200">
-        <h2 className="text-xl font-bold text-red-900 mb-2">Nebezpečná zóna</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Tato akce je nevratná. Všechny rezervace budou trvale smazány.
-        </p>
-
-        {!showDeleteConfirm ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-          >
-            Smazat všechny rezervace
-          </button>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Zadejte admin heslo pro potvrzení:
-              </label>
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full px-4 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Admin heslo"
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={handleDeleteAllReservations}
-                disabled={deleting || !deletePassword}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {deleting ? 'Mazání...' : 'Potvrdit smazání'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeletePassword('');
-                }}
-                disabled={deleting}
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors"
-              >
-                Zrušit
-              </button>
-            </div>
-          </div>
-        )}
       </div>
       </div>
     </div>
