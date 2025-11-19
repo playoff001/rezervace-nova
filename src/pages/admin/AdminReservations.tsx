@@ -183,12 +183,27 @@ export default function AdminReservations() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReservations.map((reservation) => {
-                  const isPast = new Date(reservation.checkOut).getTime() < Date.now();
+                {filteredReservations.map((reservation, index) => {
+                  const now = Date.now();
+                  const checkOutTime = new Date(reservation.checkOut).getTime();
+                  const checkInTime = new Date(reservation.checkIn).getTime();
+                  const isPast = checkOutTime < now;
+                  const daysUntil = Math.floor((checkInTime - now) / (1000 * 60 * 60 * 24));
+                  const isUpcoming =
+                    !isPast &&
+                    daysUntil >= 0 &&
+                    daysUntil <= 7 &&
+                    index < 2;
                   return (
                   <tr
                     key={reservation.id}
-                    className={`hover:bg-gray-50 ${isPast ? 'bg-gray-100 text-gray-500' : ''}`}
+                    className={`hover:bg-gray-50 ${
+                      isPast
+                        ? 'bg-red-50 text-gray-500'
+                        : isUpcoming
+                        ? 'bg-green-50'
+                        : ''
+                    }`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(reservation.createdAt)}
