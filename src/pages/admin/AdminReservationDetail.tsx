@@ -195,20 +195,20 @@ export default function AdminReservationDetail() {
                   <dd className="mt-1 text-lg font-semibold text-gray-900">{reservation.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Příjezd</dt>
-                  <dd className="mt-1 text-lg text-gray-900">
+                  <dt className="text-sm font-medium text-gray-500">Počet nocí</dt>
+                  <dd className="mt-1 text-lg text-gray-900">{reservation.nights}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500 col-span-2">Příjezd</dt>
+                  <dd className="mt-1 text-lg text-gray-900 col-span-2">
                     {formatWithPartOfDay(reservation.checkIn, 'arrival')}
                   </dd>
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-2">
                   <dt className="text-sm font-medium text-gray-500">Odjezd</dt>
                   <dd className="mt-1 text-lg text-gray-900">
                     {formatWithPartOfDay(reservation.checkOut, 'departure')}
                   </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Počet nocí</dt>
-                  <dd className="mt-1 text-lg text-gray-900">{reservation.nights}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Celková cena</dt>
