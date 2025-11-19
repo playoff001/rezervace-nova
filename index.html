@@ -12,61 +12,57 @@
   <body>
     <div id="root"></div>
     <script>
-      // PREZENTAČNÍ ÚPRAVA: Přesměrování z UUID URL PŘED načtením Reactu
+      // OPRAVA: Přesměrování ze starých URL formátů PŘED načtením Reactu
       (function() {
-        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const pathname = window.location.pathname;
         const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         
-        if (pathParts.length > 0) {
+        // Rozděl URL na části
+        const pathParts = pathname.split('/').filter(Boolean);
+        
+        // Pokud je to prázdná stránka nebo root, nech to projít (zobrazí se výběr pokojů)
+        if (pathParts.length === 0) {
+          return;
+        }
+        
+        // Hlavní kontrola starých URL formátů
+        let shouldRedirect = false;
+        
+        if (pathParts.length >= 2) {
           const firstPart = pathParts[0];
+          const secondPart = pathParts[1];
           
-          // Pokud je první část UUID (a není to admin, rezervace/rezervace nebo potvrzeni), přesměruj na root
-          if (uuidPattern.test(firstPart) && firstPart !== 'admin' && firstPart !== 'rezervace' && firstPart !== 'reservace' && firstPart !== 'potvrzeni') {
-            console.log('UUID detected as first part in URL, redirecting to root:', window.location.pathname);
-            window.location.replace('/');
-            return;
-          }
-          
-          // Pokud je první část "rezervace" nebo "reservace" (starý název) a druhá část je UUID (což je ID rezervace, ne pokoje), přesměruj na root
-          if ((firstPart === 'rezervace' || firstPart === 'reservace') && pathParts.length > 1 && uuidPattern.test(pathParts[1])) {
-            console.log('UUID detected in /' + firstPart + '/ path (reservation ID, not room ID), redirecting to root:', window.location.pathname);
-            window.location.replace('/');
-            return;
-          }
-
-          // Pokud je první část "admin", druhá "rezervace"/"reservace" a třetí část je UUID (starý admin detail rezervace), přesměruj na root
-          if (
-            firstPart === 'admin' &&
-            pathParts.length > 2 &&
-            (pathParts[1] === 'rezervace' || pathParts[1] === 'reservace') &&
-            uuidPattern.test(pathParts[2])
-          ) {
-            console.log('Old admin reservation URL detected, redirecting to root:', window.location.pathname);
-            window.location.replace('/');
-            return;
+          // /reservace/{UUID} - starý formát se "s" (vždy přesměruj, protože nový formát je "rezervace" bez "s")
+          if (firstPart === 'reservace' && uuidPattern.test(secondPart)) {
+            shouldRedirect = true;
+            console.log('[index.html] Old /reservace/{UUID} format detected, redirecting to root:', pathname);
           }
           
-          // Pokud je první část "reservace" (starý název se "s") a není to v admin, přesměruj na root (kompatibilita se starými URL)
-          if (firstPart === 'reservace' && pathParts[0] !== 'admin') {
-            console.log('Old "reservace" path detected, redirecting to root:', window.location.pathname);
-            window.location.replace('/');
-            return;
+          // /admin/reservace/{UUID} - starý admin detail se "s"
+          if (firstPart === 'admin' && pathParts.length >= 3 && pathParts[1] === 'reservace' && uuidPattern.test(pathParts[2])) {
+            shouldRedirect = true;
+            console.log('[index.html] Old /admin/reservace/{UUID} format detected, redirecting to root:', pathname);
+          }
+        }
+        
+        // Regex kontrola jako záloha
+        if (!shouldRedirect) {
+          // /reservace/{nějaký-uuid-formát} - starý formát se "s"
+          if (/^\/reservace\/[0-9a-f-]{20,}$/i.test(pathname)) {
+            shouldRedirect = true;
+            console.log('[index.html] Old /reservace/ format detected by regex, redirecting to root:', pathname);
           }
           
-          // Pokud je URL prázdná nebo root, zkontroluj localStorage a vymaž jakékoliv staré URL
-          if (pathParts.length === 0 || (pathParts.length === 1 && pathParts[0] === '')) {
-            // Vymaž localStorage, pokud obsahuje staré URL (pro jistotu)
-            try {
-              // Zkontroluj, jestli není uložená stará URL
-              const savedPath = sessionStorage.getItem('lastPath');
-              if (savedPath && savedPath.includes('/admin/reservace/')) {
-                sessionStorage.removeItem('lastPath');
-                console.log('Removed old admin/reservace URL from sessionStorage');
-              }
-            } catch (e) {
-              // Ignoruj chyby
-            }
+          // /admin/reservace/{nějaký-uuid-formát}
+          if (/^\/admin\/reservace\/[0-9a-f-]{20,}$/i.test(pathname)) {
+            shouldRedirect = true;
+            console.log('[index.html] Old /admin/reservace/ format detected by regex, redirecting to root:', pathname);
           }
+        }
+        
+        if (shouldRedirect) {
+          window.location.replace('/');
+          return;
         }
       })();
     </script>
