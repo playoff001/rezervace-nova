@@ -1,0 +1,36 @@
+﻿// Admin Rooms - sprava pokoju
+import { useEffect, useState } from 'react';
+import { roomsAPI } from '../../api/api';
+import type { Room, SeasonalPricing } from '../../types';
+import AdminRoomCalendar from '../../components/admin/AdminRoomCalendar';
+
+export default function AdminRooms() {
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [showRoomForm, setShowRoomForm] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [roomForm, setRoomForm] = useState({
+    name: '',
+    capacity: 2,
+    pricePerNight: 1000,
+    description: '',
+    available: true,
+    pricingModel: 'simple' as 'simple' | 'seasonal',
+    seasonalPricing: {
+      mainSeason: { 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
+      offSeason: { 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
+      holidays: {
+        christmas: {} as { [nights: number]: number },
+        newyear: {} as { [nights: number]: number },
+        easter: {} as { [nights: number]: number },
+      },
+    } as SeasonalPricing,
+    extraServices: {
+      breakfastPrice: 0,
+      halfBoardPrice: 0,
+      fullBoardPrice: 0,
+      customLabel: '',
+      customServicePrice: 0,
+    },
+  });
