@@ -11,6 +11,8 @@ import AdminReservationDetail from './pages/admin/AdminReservationDetail';
 import AdminSettings from './pages/admin/AdminSettings';
 import Layout from './components/Layout';
 import AdminLayout from './components/admin/AdminLayout';
+import LandingPage from './pages/LandingPage';
+import RoomsBookingPage from './pages/RoomsBookingPage';
 
 function App() {
   // V produkci by neměl být basePath (aplikace běží na root doméně)
@@ -59,10 +61,20 @@ function App() {
       <Routes>
         {/* Uživatelská část */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<ReservationForm />} />
-          <Route path="pokoje" element={<RoomSelection />} />
+          {/* Nová úvodní stránka s rozcestníkem */}
+          <Route index element={<LandingPage />} />
+
+          {/* Stávající formulář pro celý penzion */}
+          <Route path="penzion" element={<ReservationForm />} />
+          <Route path="penzion/pokoje" element={<RoomSelection />} />
+          <Route path="penzion/potvrzeni/:reservationId" element={<ReservationConfirmation />} />
+
+          {/* Zachování původních URL kvůli zpětné kompatibilitě */}
           <Route path="reservace/:roomId" element={<ReservationForm />} />
           <Route path="potvrzeni/:reservationId" element={<ReservationConfirmation />} />
+
+          {/* Stránka s přehledem pokojů (budoucí pokojový formulář) */}
+          <Route path="pokoje" element={<RoomsBookingPage />} />
         </Route>
 
         {/* Administrace */}

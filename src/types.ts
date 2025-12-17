@@ -24,6 +24,17 @@ export interface Block {
   createdAt: string;
 }
 
+// Typ rezervace (penzion vs. pokoje)
+export type BookingType = 'guesthouse' | 'room';
+
+// Vybrané služby pro pokojovou variantu
+export interface SelectedServicesData {
+  breakfast?: { selected: boolean; pricePerPersonPerNight: number; totalPrice: number };
+  halfBoard?: { selected: boolean; pricePerPersonPerNight: number; totalPrice: number };
+  fullBoard?: { selected: boolean; pricePerPersonPerNight: number; totalPrice: number };
+  customService?: { selected: boolean; label: string; pricePerPersonPerNight: number; totalPrice: number };
+}
+
 // Rezervace
 export interface Reservation {
   id: string;
@@ -41,10 +52,15 @@ export interface Reservation {
   status: ReservationStatus;
   paymentMethod?: PaymentMethod;
   paymentNote?: string;
+  // Typ rezervace a ceník
+  bookingType?: BookingType; // 'guesthouse' = penzion (záloha+doplatek), 'room' = pokoj (celá částka)
+  basePricePerPersonPerNight?: number; // základní cena za osobu/noc (pro pokoje)
+  basePrice?: number; // základní cena bez služeb (pro pokoje)
+  selectedServices?: SelectedServicesData; // vybrané služby (pro pokoje)
   // Platební údaje
   variableSymbol?: string; // variabilní symbol (rok + pořadové číslo)
   invoiceNumber?: string; // číslo faktury (rok + pořadové číslo)
-  depositAmount?: number; // výše zálohy (50% z totalPrice)
+  depositAmount?: number; // výše zálohy (50% z totalPrice) - pouze pro penzion
   depositPaid?: boolean; // zda je záloha zaplacena
   finalPaymentPaid?: boolean; // zda je doplatek zaplacen
   refundAmount?: number; // částka vrácená při stornu
@@ -67,12 +83,28 @@ export interface SeasonalPricing {
 export interface Room {
   id: string;
   name: string;
-  capacity: number; // maximální počet osob
-  pricePerNight: number; // cena za noc (pro jednoduchý model)
+  capacity: number; // maximální počet osob v pokoji
+  /**
+   * Základní cena:
+   * - u penzionové varianty slouží jako fallback / jednoduchý model,
+   * - u pokoje znamená "cena za osobu / den".
+   */
+  pricePerNight: number;
   pricingModel?: PricingModel; // typ cenového modelu
   seasonalPricing?: SeasonalPricing; // sezónní ceny (pokud pricingModel === 'seasonal')
   description?: string;
   available: boolean; // zda je pokoj dostupný pro rezervace
+  /**
+   * Volitelné příplatkové služby pro pokojovou variantu (Kč / osoba / den).
+   * Pokud je cena prázdná nebo 0, služba se ve formuláři vůbec nezobrazí.
+   */
+  extraServices?: {
+    breakfastPrice?: number;      // snídaně
+    halfBoardPrice?: number;     // polopenze
+    fullBoardPrice?: number;     // plná penze
+    customLabel?: string;        // vlastní název služby (např. "soukromé parkování")
+    customServicePrice?: number; // cena vlastní služby
+  };
   createdAt: string;
   updatedAt: string;
 }

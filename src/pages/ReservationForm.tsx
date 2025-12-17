@@ -118,9 +118,9 @@ export default function ReservationForm() {
       }
     } catch (error) {
       // Pokud se nepodařilo načíst pokoj (404 nebo jiná chyba), přesměruj na root a načti první dostupný
-      console.log('Room not found, redirecting to root and loading first available room');
-      // Přesměruj na root URL (bez roomId)
-      navigate('/', { replace: true, state: null });
+      console.log('Room not found, redirecting to /penzion and loading first available room');
+      // Přesměruj na hlavní stránku formuláře pro penzion (bez roomId)
+      navigate('/penzion', { replace: true, state: null });
       loadFirstAvailableRoom();
     } finally {
       setLoading(false);
@@ -208,6 +208,7 @@ export default function ReservationForm() {
         ...reservationData,
         nights,
         totalPrice,
+        bookingType: 'guesthouse', // Penzion varianta - se zálohou
       });
       
       console.log('Rezervace vytvořena:', response);

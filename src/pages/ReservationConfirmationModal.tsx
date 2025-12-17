@@ -240,19 +240,9 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                   <dd className="text-gray-900">{reservation.nights}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Celková cena</dt>
-                  <dd className="font-bold" style={{ color: '#a04e27' }}>
-                    {reservation.totalPrice} Kč
-                  </dd>
+                  <dt className="text-gray-500">Počet osob</dt>
+                  <dd className="text-gray-900">{reservation.numberOfGuests}</dd>
                 </div>
-                {reservation.depositAmount && (
-                  <div>
-                    <dt className="text-gray-500">Záloha</dt>
-                    <dd className="text-gray-900">
-                      {reservation.depositAmount} Kč
-                    </dd>
-                  </div>
-                )}
                 <div>
                   <dt className="text-gray-500">Jméno</dt>
                   <dd className="text-gray-900 truncate">{reservation.guestName}</dd>
@@ -262,10 +252,74 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                   <dd className="text-gray-900">{reservation.guestPhone}</dd>
                 </div>
               </dl>
+              
+              {/* Ceník - rozlišení podle typu rezervace */}
+              {reservation.bookingType === 'room' ? (
+                // Pokojová varianta - základní cena + služby
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <h3 className="text-xs font-semibold text-gray-700 mb-1">Ceník</h3>
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex justify-between">
+                      <span>Základní cena ({reservation.numberOfGuests} os. × {reservation.nights} nocí)</span>
+                      <span>{reservation.basePrice || reservation.totalPrice} Kč</span>
+                    </div>
+                    {reservation.selectedServices?.breakfast?.selected && (
+                      <div className="flex justify-between text-green-700">
+                        <span>+ Snídaně</span>
+                        <span>{reservation.selectedServices.breakfast.totalPrice} Kč</span>
+                      </div>
+                    )}
+                    {reservation.selectedServices?.halfBoard?.selected && (
+                      <div className="flex justify-between text-green-700">
+                        <span>+ Polopenze</span>
+                        <span>{reservation.selectedServices.halfBoard.totalPrice} Kč</span>
+                      </div>
+                    )}
+                    {reservation.selectedServices?.fullBoard?.selected && (
+                      <div className="flex justify-between text-green-700">
+                        <span>+ Plná penze</span>
+                        <span>{reservation.selectedServices.fullBoard.totalPrice} Kč</span>
+                      </div>
+                    )}
+                    {reservation.selectedServices?.customService?.selected && (
+                      <div className="flex justify-between text-green-700">
+                        <span>+ {reservation.selectedServices.customService.label}</span>
+                        <span>{reservation.selectedServices.customService.totalPrice} Kč</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold pt-1 border-t border-gray-200" style={{ color: '#2563eb' }}>
+                      <span>Celkem k úhradě</span>
+                      <span>{reservation.totalPrice} Kč</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Penzion varianta - záloha + doplatek
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">Celková cena</span>
+                    <span className="font-bold" style={{ color: '#a04e27' }}>
+                      {reservation.totalPrice} Kč
+                    </span>
+                  </div>
+                  {reservation.depositAmount && (
+                    <>
+                      <div className="flex justify-between text-xs mt-0.5">
+                        <span className="text-gray-500">Záloha (50%)</span>
+                        <span>{reservation.depositAmount} Kč</span>
+                      </div>
+                      <div className="flex justify-between text-xs mt-0.5">
+                        <span className="text-gray-500">Doplatek (50%)</span>
+                        <span>{reservation.totalPrice - reservation.depositAmount} Kč</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Platební údaje a QR kódy - kompaktní */}
-            {(reservation.variableSymbol || reservation.depositAmount) && (
+            {reservation.variableSymbol && (
               <div className="border-t border-b border-gray-200 py-2 mb-3">
                 <h2 className="text-sm font-bold text-gray-900 mb-1">
                   Platební údaje
@@ -298,20 +352,32 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                           </dd>
                         </div>
                       )}
-                      {reservation.depositAmount && (
+                      {/* Pro penzion: záloha + doplatek, pro pokoje: pouze celková částka */}
+                      {reservation.bookingType === 'room' ? (
                         <div>
-                          <dt className="text-gray-500">Záloha</dt>
-                          <dd className="font-semibold text-gray-900">
-                            {reservation.depositAmount} Kč
+                          <dt className="text-gray-500">K úhradě</dt>
+                          <dd className="font-semibold text-blue-600">
+                            {reservation.totalPrice} Kč
                           </dd>
                         </div>
+                      ) : (
+                        <>
+                          {reservation.depositAmount && (
+                            <div>
+                              <dt className="text-gray-500">Záloha</dt>
+                              <dd className="font-semibold text-gray-900">
+                                {reservation.depositAmount} Kč
+                              </dd>
+                            </div>
+                          )}
+                          <div>
+                            <dt className="text-gray-500">Doplatek</dt>
+                            <dd className="font-semibold text-gray-900">
+                              {reservation.totalPrice - (reservation.depositAmount || 0)} Kč
+                            </dd>
+                          </div>
+                        </>
                       )}
-                      <div>
-                        <dt className="text-gray-500">Doplatek</dt>
-                        <dd className="font-semibold text-gray-900">
-                          {reservation.totalPrice - (reservation.depositAmount || 0)} Kč
-                        </dd>
-                      </div>
                     </dl>
                   </div>
                   
@@ -323,8 +389,8 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2 justify-center">
-                        {/* PREZENTAČNÍ ÚPRAVA: Zmenšené QR kódy vedle sebe */}
-                        {qrCodeDeposit && (
+                        {/* Pro penzion: QR pro zálohu i celou částku, pro pokoje: pouze celá částka */}
+                        {reservation.bookingType !== 'room' && qrCodeDeposit && (
                           <div className="text-center">
                             <p className="text-xs text-gray-600 mb-1">Záloha</p>
                             <img src={qrCodeDeposit} alt="QR kód pro zálohu" className="mx-auto border border-gray-300 rounded w-24 h-24" />
@@ -332,8 +398,10 @@ export default function ReservationConfirmationModal({ reservationId, reservatio
                         )}
                         {qrCodeFull && (
                           <div className="text-center">
-                            <p className="text-xs text-gray-600 mb-1">Celá částka</p>
-                            <img src={qrCodeFull} alt="QR kód pro celou částku" className="mx-auto border border-gray-300 rounded w-24 h-24" />
+                            <p className="text-xs text-gray-600 mb-1">
+                              {reservation.bookingType === 'room' ? 'Platba' : 'Celá částka'}
+                            </p>
+                            <img src={qrCodeFull} alt="QR kód pro platbu" className="mx-auto border border-gray-300 rounded w-24 h-24" />
                           </div>
                         )}
                       </div>

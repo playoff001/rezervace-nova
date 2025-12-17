@@ -25,6 +25,13 @@ export default function AdminRooms() {
         easter: {} as { [nights: number]: number },
       },
     } as SeasonalPricing,
+    extraServices: {
+      breakfastPrice: 0,
+      halfBoardPrice: 0,
+      fullBoardPrice: 0,
+      customLabel: '',
+      customServicePrice: 0,
+    },
   });
 
   useEffect(() => {
@@ -131,6 +138,13 @@ export default function AdminRooms() {
           easter: {},
         },
       },
+      extraServices: {
+        breakfastPrice: room.extraServices?.breakfastPrice ?? 0,
+        halfBoardPrice: room.extraServices?.halfBoardPrice ?? 0,
+        fullBoardPrice: room.extraServices?.fullBoardPrice ?? 0,
+        customLabel: room.extraServices?.customLabel ?? '',
+        customServicePrice: room.extraServices?.customServicePrice ?? 0,
+      },
     });
     setShowRoomForm(true);
   }
@@ -172,6 +186,32 @@ export default function AdminRooms() {
         };
       } else {
         dataToSave.pricingModel = 'simple';
+      }
+
+      // Příplatkové služby – ukládáme jen pokud dává smysl něco zobrazovat
+      const {
+        breakfastPrice,
+        halfBoardPrice,
+        fullBoardPrice,
+        customLabel,
+        customServicePrice,
+      } = roomForm.extraServices || {};
+
+      const hasAnyService =
+        (breakfastPrice && breakfastPrice > 0) ||
+        (halfBoardPrice && halfBoardPrice > 0) ||
+        (fullBoardPrice && fullBoardPrice > 0) ||
+        (customServicePrice && customServicePrice > 0) ||
+        (customLabel && customLabel.trim().length > 0);
+
+      if (hasAnyService) {
+        dataToSave.extraServices = {
+          ...(breakfastPrice && breakfastPrice > 0 ? { breakfastPrice } : {}),
+          ...(halfBoardPrice && halfBoardPrice > 0 ? { halfBoardPrice } : {}),
+          ...(fullBoardPrice && fullBoardPrice > 0 ? { fullBoardPrice } : {}),
+          ...(customLabel && customLabel.trim().length > 0 ? { customLabel: customLabel.trim() } : {}),
+          ...(customServicePrice && customServicePrice > 0 ? { customServicePrice } : {}),
+        };
       }
 
       if (editingRoom) {
@@ -365,6 +405,119 @@ export default function AdminRooms() {
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
+              </div>
+            </div>
+
+            {/* Příplatkové služby (Kč / osoba / den) */}
+            <div className="mt-6 border-t pt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Příplatkové služby (Kč / osoba / den)
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Tyto položky se používají u pokojové varianty. Pokud cenu necháte prázdnou nebo 0,
+                daná služba se v rezervačním formuláři vůbec nezobrazí.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Snídaně (Kč / osoba / den)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={roomForm.extraServices.breakfastPrice ?? 0}
+                    onChange={(e) =>
+                      setRoomForm({
+                        ...roomForm,
+                        extraServices: {
+                          ...roomForm.extraServices,
+                          breakfastPrice: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Polopenze (Kč / osoba / den)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={roomForm.extraServices.halfBoardPrice ?? 0}
+                    onChange={(e) =>
+                      setRoomForm({
+                        ...roomForm,
+                        extraServices: {
+                          ...roomForm.extraServices,
+                          halfBoardPrice: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Plná penze (Kč / osoba / den)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={roomForm.extraServices.fullBoardPrice ?? 0}
+                    onChange={(e) =>
+                      setRoomForm({
+                        ...roomForm,
+                        extraServices: {
+                          ...roomForm.extraServices,
+                          fullBoardPrice: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div className="md:col-span-2 lg:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Název vlastní služby
+                  </label>
+                  <input
+                    type="text"
+                    value={roomForm.extraServices.customLabel ?? ''}
+                    onChange={(e) =>
+                      setRoomForm({
+                        ...roomForm,
+                        extraServices: {
+                          ...roomForm.extraServices,
+                          customLabel: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder="např. Soukromé parkování"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cena vlastní služby (Kč / osoba / den)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={roomForm.extraServices.customServicePrice ?? 0}
+                    onChange={(e) =>
+                      setRoomForm({
+                        ...roomForm,
+                        extraServices: {
+                          ...roomForm.extraServices,
+                          customServicePrice: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
               </div>
             </div>
 

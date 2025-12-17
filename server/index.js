@@ -375,16 +375,31 @@ app.post('/api/reservations', async (req, res) => {
       return res.status(404).json({ error: 'Pokoj nenalezen' });
     }
 
+    // Kontrola kapacity
+    if (req.body.numberOfGuests > room.capacity) {
+      return res.status(400).json({ 
+        error: `Počet osob (${req.body.numberOfGuests}) překračuje kapacitu pokoje (${room.capacity}).` 
+      });
+    }
+
     // Generování variabilního symbolu a čísla faktury
     const variableSymbol = await generateVariableSymbol();
     const invoiceNumber = await generateInvoiceNumber();
-    const depositAmount = Math.round(req.body.totalPrice * 0.5); // 50% záloha
+    
+    // Rozlišení typu rezervace: 'room' = pokoje (bez zálohy), 'guesthouse' = penzion (se zálohou)
+    const bookingType = req.body.bookingType || 'guesthouse';
+    const isRoomBooking = bookingType === 'room';
+    
+    // Záloha pouze pro penzion, ne pro pokoje
+    const depositAmount = isRoomBooking ? null : Math.round(req.body.totalPrice * 0.5);
 
-    console.log('Vytváření rezervace s platebními údaji:', {
+    console.log('Vytváření rezervace:', {
+      bookingType,
       variableSymbol,
       invoiceNumber,
       depositAmount,
-      totalPrice: req.body.totalPrice
+      totalPrice: req.body.totalPrice,
+      selectedServices: req.body.selectedServices
     });
 
     const newReservation = {
@@ -394,9 +409,10 @@ app.post('/api/reservations', async (req, res) => {
       status: 'pending',
       variableSymbol,
       invoiceNumber,
-      depositAmount,
-      depositPaid: false,
-      finalPaymentPaid: false,
+      // Pro pokoje není záloha
+      depositAmount: depositAmount,
+      depositPaid: isRoomBooking ? null : false,
+      finalPaymentPaid: isRoomBooking ? null : false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -404,7 +420,7 @@ app.post('/api/reservations', async (req, res) => {
     data.reservations.push(newReservation);
     await saveData('reservations.json', data);
     
-    console.log('Rezervace vytvořena:', newReservation.id, 'VS:', variableSymbol, 'Faktura:', invoiceNumber);
+    console.log('Rezervace vytvořena:', newReservation.id, 'Typ:', bookingType, 'VS:', variableSymbol);
     
     // Odeslání e-mailu a SMS (pokud je nakonfigurováno)
     await sendReservationNotifications(newReservation);
@@ -843,37 +859,86 @@ async function generateInvoicePDF(reservation, guesthouse) {
     
     // Tabulka položek
     const startY = y;
+    const isRoomBooking = reservation.bookingType === 'room';
+    
     doc.fontSize(10);
     doc.text('Položka', 20, y);
     doc.text('Množství', 300, y);
     doc.text('Cena', 400, y);
     doc.text('Celkem', 500, y);
-    y += 16; // +4 px dolů
+    y += 16;
     
     // Čára pod hlavičkou tabulky
     doc.moveTo(20, y).lineTo(575, y).stroke();
     y += 15;
     
-    // Položka
-    doc.text(`Pobyt: ${reservation.roomName || 'N/A'}`, 20, y);
-    y += 15;
-    doc.text(`${reservation.checkIn} - ${reservation.checkOut}`, 20, y);
-    // Množství, cena, celkem na stejné řádce (o 6 bodů výš, aby byly zarovnané)
-    doc.text(`${reservation.nights} nocí`, 300, y - 6);
-    doc.text(`${Math.round(reservation.totalPrice / reservation.nights)} Kč/noc`, 400, y - 6);
-    doc.text(`${reservation.totalPrice} Kč`, 500, y - 6);
-    y += 16; // +4 px dolů (z 12 na 16)
+    if (isRoomBooking) {
+      // Pokojová varianta - základní cena + služby
+      const basePrice = reservation.basePrice || reservation.totalPrice;
+      const pricePerPerson = reservation.basePricePerPersonPerNight || Math.round(basePrice / reservation.numberOfGuests / reservation.nights);
+      
+      // Základní cena pobytu
+      doc.text(`Pobyt: ${reservation.roomName || 'N/A'}`, 20, y);
+      y += 15;
+      doc.text(`${reservation.checkIn} - ${reservation.checkOut}`, 20, y);
+      doc.text(`${reservation.numberOfGuests} os. × ${reservation.nights} nocí`, 300, y - 6);
+      doc.text(`${pricePerPerson} Kč/os./noc`, 400, y - 6);
+      doc.text(`${basePrice} Kč`, 500, y - 6);
+      y += 16;
+      
+      // Služby
+      const services = reservation.selectedServices;
+      if (services) {
+        if (services.breakfast?.selected) {
+          doc.text(`Snídaně`, 20, y);
+          doc.text(`${reservation.numberOfGuests} os. × ${reservation.nights} nocí`, 300, y);
+          doc.text(`${services.breakfast.pricePerPersonPerNight} Kč/os./noc`, 400, y);
+          doc.text(`${services.breakfast.totalPrice} Kč`, 500, y);
+          y += 14;
+        }
+        if (services.halfBoard?.selected) {
+          doc.text(`Polopenze`, 20, y);
+          doc.text(`${reservation.numberOfGuests} os. × ${reservation.nights} nocí`, 300, y);
+          doc.text(`${services.halfBoard.pricePerPersonPerNight} Kč/os./noc`, 400, y);
+          doc.text(`${services.halfBoard.totalPrice} Kč`, 500, y);
+          y += 14;
+        }
+        if (services.fullBoard?.selected) {
+          doc.text(`Plná penze`, 20, y);
+          doc.text(`${reservation.numberOfGuests} os. × ${reservation.nights} nocí`, 300, y);
+          doc.text(`${services.fullBoard.pricePerPersonPerNight} Kč/os./noc`, 400, y);
+          doc.text(`${services.fullBoard.totalPrice} Kč`, 500, y);
+          y += 14;
+        }
+        if (services.customService?.selected) {
+          doc.text(`${services.customService.label}`, 20, y);
+          doc.text(`${reservation.numberOfGuests} os. × ${reservation.nights} nocí`, 300, y);
+          doc.text(`${services.customService.pricePerPersonPerNight} Kč/os./noc`, 400, y);
+          doc.text(`${services.customService.totalPrice} Kč`, 500, y);
+          y += 14;
+        }
+      }
+    } else {
+      // Penzion varianta - stávající logika
+      doc.text(`Pobyt: ${reservation.roomName || 'N/A'}`, 20, y);
+      y += 15;
+      doc.text(`${reservation.checkIn} - ${reservation.checkOut}`, 20, y);
+      doc.text(`${reservation.nights} nocí`, 300, y - 6);
+      doc.text(`${Math.round(reservation.totalPrice / reservation.nights)} Kč/noc`, 400, y - 6);
+      doc.text(`${reservation.totalPrice} Kč`, 500, y - 6);
+      y += 16;
+    }
     
     // Celkem
     doc.moveTo(20, y).lineTo(575, y).stroke();
-    y += 8; // +4 px dolů (z 4 na 8)
+    y += 8;
     doc.fontSize(12);
     doc.text('Celkem k úhradě:', 380, y);
     doc.text(`${reservation.totalPrice} Kč`, 500, y);
     y += 25;
     
-    // Záloha a doplatek
-    if (reservation.depositAmount) {
+    // Záloha a doplatek - pouze pro penzion variantu
+    if (!isRoomBooking && reservation.depositAmount) {
       doc.fontSize(10);
       doc.text(`Záloha (50%): ${reservation.depositAmount} Kč`, 20, y);
       y += 15;
@@ -939,13 +1004,17 @@ async function sendReservationEmail(reservation) {
       },
     });
     
-    // Generování QR kódu pro zálohu
     const guesthouse = config.guesthouse;
+    const isRoomBooking = reservation.bookingType === 'room';
+    
+    // Generování QR kódů
     let qrCodeDeposit = null;
     let qrCodeFull = null;
     
     if (guesthouse?.bankAccount?.accountNumber && reservation.variableSymbol) {
-      if (reservation.depositAmount) {
+      // Pro penzion generujeme QR pro zálohu i celou částku
+      // Pro pokoje pouze QR pro celou částku
+      if (!isRoomBooking && reservation.depositAmount) {
         qrCodeDeposit = await generateQRCodeSPD(
           guesthouse.bankAccount.accountNumber,
           reservation.depositAmount,
@@ -961,51 +1030,115 @@ async function sendReservationEmail(reservation) {
       );
     }
     
+    // Sestavení HTML pro služby (pouze pro pokojovou variantu)
+    let servicesHtml = '';
+    if (isRoomBooking && reservation.selectedServices) {
+      const services = reservation.selectedServices;
+      servicesHtml = '<h3>Zvolené služby:</h3><ul>';
+      
+      if (services.breakfast?.selected) {
+        servicesHtml += `<li>Snídaně: +${services.breakfast.totalPrice} Kč (${services.breakfast.pricePerPersonPerNight} Kč/os./noc)</li>`;
+      }
+      if (services.halfBoard?.selected) {
+        servicesHtml += `<li>Polopenze: +${services.halfBoard.totalPrice} Kč (${services.halfBoard.pricePerPersonPerNight} Kč/os./noc)</li>`;
+      }
+      if (services.fullBoard?.selected) {
+        servicesHtml += `<li>Plná penze: +${services.fullBoard.totalPrice} Kč (${services.fullBoard.pricePerPersonPerNight} Kč/os./noc)</li>`;
+      }
+      if (services.customService?.selected) {
+        servicesHtml += `<li>${services.customService.label}: +${services.customService.totalPrice} Kč (${services.customService.pricePerPersonPerNight} Kč/os./noc)</li>`;
+      }
+      
+      servicesHtml += '</ul>';
+    }
+    
+    // HTML obsah emailu - rozlišení podle typu rezervace
+    let priceHtml = '';
+    if (isRoomBooking) {
+      // Pokojová varianta - základní cena + služby + celková částka
+      priceHtml = `
+        <h3>Ceník:</h3>
+        <ul>
+          <li><strong>Základní cena:</strong> ${reservation.basePrice || reservation.totalPrice} Kč 
+            (${reservation.basePricePerPersonPerNight || '?'} Kč × ${reservation.numberOfGuests} os. × ${reservation.nights} nocí)</li>
+        </ul>
+        ${servicesHtml}
+        <p style="font-size: 18px; font-weight: bold; color: #2563eb;">
+          Celková částka k úhradě: ${reservation.totalPrice} Kč
+        </p>
+      `;
+    } else {
+      // Penzion varianta - záloha + doplatek
+      priceHtml = `
+        <p><strong>Celková cena:</strong> ${reservation.totalPrice} Kč</p>
+        ${reservation.depositAmount ? `
+          <p><strong>Záloha (50%):</strong> ${reservation.depositAmount} Kč</p>
+          <p><strong>Doplatek (50%):</strong> ${reservation.totalPrice - reservation.depositAmount} Kč</p>
+        ` : ''}
+      `;
+    }
+    
+    // QR kódy HTML
+    let qrHtml = '';
+    if (isRoomBooking) {
+      // Pro pokoje pouze jeden QR kód
+      if (qrCodeFull) {
+        qrHtml = `
+          <h4>QR kód pro platbu:</h4>
+          <img src="${qrCodeFull}" alt="QR kód pro platbu" style="max-width: 300px;" />
+        `;
+      }
+    } else {
+      // Pro penzion QR pro zálohu i celou částku
+      if (qrCodeDeposit) {
+        qrHtml += `
+          <h4>QR kód pro platbu zálohy:</h4>
+          <img src="${qrCodeDeposit}" alt="QR kód pro zálohu" style="max-width: 300px;" />
+        `;
+      }
+      if (qrCodeFull) {
+        qrHtml += `
+          <h4>QR kód pro platbu celé částky:</h4>
+          <img src="${qrCodeFull}" alt="QR kód pro celou částku" style="max-width: 300px;" />
+        `;
+      }
+    }
+    
     const fromAddress = emailConfig.user;
     const fromName = emailConfig.from && emailConfig.from !== emailConfig.user 
       ? emailConfig.from 
       : undefined;
 
     const mailOptions = {
-      // Pro Seznam SMTP MUSÍ být MAIL FROM stejný jako přihlašovací e-mail.
-      // Zobrazované jméno dáme jen do "Name", ale skutečný odesílatel zůstane login.
       from: fromName ? `"${fromName}" <${fromAddress}>` : fromAddress,
       to: reservation.guestEmail,
-      subject: `Potvrzení rezervace #${reservation.id}`,
+      subject: `Potvrzení rezervace - ${reservation.roomName}`,
       html: `
         <h2>Děkujeme za vaši rezervaci!</h2>
         <p>Vaše rezervace byla úspěšně vytvořena.</p>
+        
         <h3>Detaily rezervace:</h3>
         <ul>
-          <li><strong>ID rezervace:</strong> ${reservation.id}</li>
           <li><strong>Pokoj:</strong> ${reservation.roomName}</li>
-          <li><strong>Příjezd:</strong> ${new Date(reservation.checkIn).toLocaleDateString('cs-CZ')}</li>
-          <li><strong>Odjezd:</strong> ${new Date(reservation.checkOut).toLocaleDateString('cs-CZ')}</li>
+          <li><strong>Příjezd:</strong> ${new Date(reservation.checkIn).toLocaleDateString('cs-CZ')} odpoledne</li>
+          <li><strong>Odjezd:</strong> ${new Date(reservation.checkOut).toLocaleDateString('cs-CZ')} dopoledne</li>
           <li><strong>Počet nocí:</strong> ${reservation.nights}</li>
-          <li><strong>Celková cena:</strong> ${reservation.totalPrice} Kč</li>
           <li><strong>Počet osob:</strong> ${reservation.numberOfGuests}</li>
         </ul>
+        
+        ${priceHtml}
+        
         ${reservation.note ? `<p><strong>Poznámka:</strong> ${reservation.note}</p>` : ''}
         
         <h3>Platební údaje:</h3>
         ${guesthouse?.bankAccount?.accountNumber ? `<p><strong>Číslo účtu:</strong> ${guesthouse.bankAccount.accountNumber}</p>` : ''}
         ${reservation.variableSymbol ? `<p><strong>Variabilní symbol:</strong> ${reservation.variableSymbol}</p>` : ''}
-        ${reservation.depositAmount ? `<p><strong>Záloha (50%):</strong> ${reservation.depositAmount} Kč</p>` : ''}
-        ${reservation.depositAmount ? `<p><strong>Doplatek (50%):</strong> ${reservation.totalPrice - reservation.depositAmount} Kč</p>` : ''}
         
-        ${qrCodeDeposit ? `
-          <h4>QR kód pro platbu zálohy:</h4>
-          <img src="${qrCodeDeposit}" alt="QR kód pro zálohu" style="max-width: 300px;" />
-        ` : ''}
-        
-        ${qrCodeFull ? `
-          <h4>QR kód pro platbu celé částky:</h4>
-          <img src="${qrCodeFull}" alt="QR kód pro celou částku" style="max-width: 300px;" />
-        ` : ''}
+        ${qrHtml}
         
         <p>Brzy se na vás těšíme!</p>
+        <p style="color: #666; font-size: 12px;">ID rezervace: ${reservation.id}</p>
       `,
-      // Explicitní envelope pro jistotu – Seznam vyžaduje MAIL FROM = login e-mail
       envelope: {
         from: fromAddress,
         to: reservation.guestEmail,
