@@ -221,3 +221,11 @@ Pokud nic z toho nefunguje, řekni mi:
 4. Jaký příkaz spouštíš na serveru? (`pm2 start` nebo jiný?)
 
 
+
+
+
+
+
+
+
+

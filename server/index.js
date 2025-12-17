@@ -961,8 +961,15 @@ async function sendReservationEmail(reservation) {
       );
     }
     
+    const fromAddress = emailConfig.user;
+    const fromName = emailConfig.from && emailConfig.from !== emailConfig.user 
+      ? emailConfig.from 
+      : undefined;
+
     const mailOptions = {
-      from: emailConfig.from || emailConfig.user,
+      // Pro Seznam SMTP MUSÍ být MAIL FROM stejný jako přihlašovací e-mail.
+      // Zobrazované jméno dáme jen do "Name", ale skutečný odesílatel zůstane login.
+      from: fromName ? `"${fromName}" <${fromAddress}>` : fromAddress,
       to: reservation.guestEmail,
       subject: `Potvrzení rezervace #${reservation.id}`,
       html: `
@@ -998,6 +1005,11 @@ async function sendReservationEmail(reservation) {
         
         <p>Brzy se na vás těšíme!</p>
       `,
+      // Explicitní envelope pro jistotu – Seznam vyžaduje MAIL FROM = login e-mail
+      envelope: {
+        from: fromAddress,
+        to: reservation.guestEmail,
+      },
     };
     
     await transporter.sendMail(mailOptions);
